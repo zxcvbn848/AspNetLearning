@@ -14,7 +14,7 @@ public sealed class TodoItem
     /// <summary>
     /// 待辦事項的文字內容。
     /// </summary>
-    public required string Title { get; init; }
+    public required string Title { get; set; }
 
     /// <summary>
     /// 待辦事項是否已完成。

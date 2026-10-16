@@ -68,5 +68,40 @@ public static class TodoEndpoints
             // HTTP 201 Created 表示成功建立資料，並提供新資源的位置與內容。
             return Results.Created($"/todos/{todoItem.Id}", todoItem);
         });
+
+        // PUT /todos/{id} 會完整更新指定待辦事項的標題與完成狀態。
+        app.MapPut("/todos/{id:int}", (int id, UpdateTodoRequest request) =>
+        {
+            TodoItem? todoItem = TodoItems.FirstOrDefault(item => item.Id == id);
+
+            if (todoItem is null)
+            {
+                return Results.NotFound(new { message = $"找不到 Id 為 {id} 的待辦事項。" });
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Title))
+            {
+                return Results.BadRequest(new { message = "Title 不可為空白。" });
+            }
+
+            todoItem.Title = request.Title.Trim();
+            todoItem.IsCompleted = request.IsCompleted;
+
+            return Results.Ok(todoItem);
+        });
+
+        // DELETE /todos/{id} 會刪除指定待辦事項。
+        app.MapDelete("/todos/{id:int}", (int id) =>
+        {
+            TodoItem? todoItem = TodoItems.FirstOrDefault(item => item.Id == id);
+
+            if (todoItem is null)
+            {
+                return Results.NotFound(new { message = $"找不到 Id 為 {id} 的待辦事項。" });
+            }
+
+            TodoItems.Remove(todoItem);
+            return Results.NoContent();
+        });
     }
 }
