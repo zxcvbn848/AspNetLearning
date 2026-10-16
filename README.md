@@ -32,6 +32,8 @@ AspNetLearning/
 
 在 Cursor 的 Command Palette 執行 `Dev Containers: Reopen in Container` 即可進入容器。
 
+容器中的網站已由 `dotnet watch` 執行。需要除錯時按下 F5，選擇 `.NET Core Attach (Docker)`，再從程序清單選擇 `AspNetLearning`；這會附加至既有網站，不會重複啟動並占用 `8080`。
+
 ### `Program.cs`
 
 ASP.NET Core 應用程式的進入點，負責建立、設定並啟動網站。
