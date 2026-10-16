@@ -18,7 +18,10 @@ AspNetLearning/
 ├── docs/
 │   └── 01-hello-api.md
 ├── postman/
-│   └── AspNetLearning.postman_collection.json
+│   ├── AspNetLearning.postman_collection.json
+│   └── environments/
+│       ├── AspNetLearning.local.postman_environment.json
+│       └── AspNetLearning.production.postman_environment.json
 ├── Properties/
 │   └── launchSettings.json
 ├── bin/
@@ -202,11 +205,21 @@ feat/* → dev → main
 
 ## Postman Collection
 
-將 `postman/AspNetLearning.postman_collection.json` 匯入 Postman，即可呼叫目前的首頁與問候 API。
+將以下檔案匯入 Postman：
 
-Collection 預設使用：
+```text
+postman/AspNetLearning.postman_collection.json
+postman/environments/AspNetLearning.local.postman_environment.json
+postman/environments/AspNetLearning.production.postman_environment.json
+```
+
+開發時選擇 `AspNetLearning - Local`；正式上線後，將正式 API 網址填入 `AspNetLearning - Production` 的 `baseUrl`，再切換環境即可使用同一組 Request。
+
+Local 環境預設使用：
 
 ```text
 baseUrl = http://localhost:8180
 name = Andy
 ```
+
+Production 範本的 `baseUrl` 刻意留空，避免尚未部署時誤送請求。密碼、Token 與其他機密資料不可提交到 GitHub，應在 Postman 中設定為敏感值。
