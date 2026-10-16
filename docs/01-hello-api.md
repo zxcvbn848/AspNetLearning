@@ -32,6 +32,8 @@ http://localhost:8180/hello/Amy
 
 ## 完整程式碼
 
+問候 API 放在 `Endpoints/HelloEndpoints.cs`，不直接堆在 `Program.cs`。
+
 ```csharp
 // 註冊 HTTP GET /hello/{name} 路由。
 // {name} 是路由參數，ASP.NET Core 會把網址中的對應文字放進 name 變數。
@@ -46,6 +48,27 @@ app.MapGet("/hello/{name}", (string name) =>
     return Results.Ok(new { message });
 });
 ```
+
+`Program.cs` 只需要呼叫：
+
+```csharp
+// 載入第一階段的問候 API 路由。
+app.MapHelloEndpoints();
+```
+
+## 為什麼拆成不同檔案
+
+`Program.cs` 是應用程式入口，負責建立、設定與啟動網站。`HelloEndpoints.cs` 負責問候功能的路由與處理方式。
+
+```text
+Program.cs
+    ↓ 呼叫 MapHelloEndpoints
+Endpoints/HelloEndpoints.cs
+    ↓ 註冊 GET /hello/{name}
+收到請求後建立並回傳問候 JSON
+```
+
+這樣新增其他階段時，可以建立新的端點檔案，不需要持續增加 `Program.cs` 的長度。
 
 ## 第一行：建立 GET 路由
 

@@ -11,6 +11,8 @@ AspNetLearning/
 ├── appsettings.json
 ├── appsettings.Development.json
 ├── compose.yaml
+├── Endpoints/
+│   └── HelloEndpoints.cs
 ├── docs/
 │   └── 01-hello-api.md
 ├── postman/
@@ -27,6 +29,9 @@ AspNetLearning/
 ASP.NET Core 應用程式的進入點，負責建立、設定並啟動網站。
 
 ```csharp
+// 匯入問候 API 所在的命名空間。
+using AspNetLearning.Endpoints;
+
 // 建立 WebApplicationBuilder，載入設定並準備註冊服務。
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,9 +41,16 @@ var app = builder.Build();
 // 註冊 GET / 路由；收到請求時回傳 Hello World!。
 app.MapGet("/", () => "Hello World!");
 
+// 載入第一階段的問候 API 路由。
+app.MapHelloEndpoints();
+
 // 啟動網站並開始接收 HTTP 請求。
 app.Run();
 ```
+
+### `Endpoints/HelloEndpoints.cs`
+
+集中放置第一階段的問候 API。`Program.cs` 只負責啟動應用程式及載入端點，實際的路由與處理邏輯放在此檔案。
 
 ### `AspNetLearning.csproj`
 
