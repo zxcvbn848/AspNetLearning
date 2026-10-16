@@ -1,4 +1,5 @@
-// 匯入 TodoItem 所在的命名空間。
+// 匯入建立待辦事項的 Request 與 TodoItem 所在的命名空間。
+using AspNetLearning.Contracts;
 using AspNetLearning.Models;
 
 // 宣告此檔案所屬的命名空間。
@@ -36,5 +37,36 @@ public static class TodoEndpoints
     {
         // GET /todos 會回傳 TodoItems 中的所有待辦事項。
         app.MapGet("/todos", () => Results.Ok(TodoItems));
+
+        // POST /todos 會讀取 Request Body 中的 JSON，並建立新的待辦事項。
+        app.MapPost("/todos", (CreateTodoRequest request) =>
+        {
+            // IsNullOrWhiteSpace 會檢查 null、空字串及只含空白的文字。
+            if (string.IsNullOrWhiteSpace(request.Title))
+            {
+                // HTTP 400 Bad Request 表示 Client 傳入的資料不符合要求。
+                return Results.BadRequest(new { message = "Title 不可為空白。" });
+            }
+
+            // 如果清單沒有資料，第一個 Id 使用 1；否則使用目前最大 Id 加 1。
+            int nextId = TodoItems.Count == 0
+                ? 1
+                : TodoItems.Max(todoItem => todoItem.Id) + 1;
+
+            // 根據 Request Body 建立新的 TodoItem 物件。
+            TodoItem todoItem = new()
+            {
+                Id = nextId,
+                Title = request.Title.Trim(),
+                IsCompleted = false
+            };
+
+            // 將新物件加入記憶體中的 List。
+            // shortcut: List 不支援多使用者同時寫入，接上資料庫時由資料庫產生 Id。
+            TodoItems.Add(todoItem);
+
+            // HTTP 201 Created 表示成功建立資料，並提供新資源的位置與內容。
+            return Results.Created($"/todos/{todoItem.Id}", todoItem);
+        });
     }
 }

@@ -13,6 +13,8 @@ AspNetLearning/
 ├── appsettings.json
 ├── appsettings.Development.json
 ├── compose.yaml
+├── Contracts/
+│   └── CreateTodoRequest.cs
 ├── Endpoints/
 │   ├── HelloEndpoints.cs
 │   └── TodoEndpoints.cs
@@ -20,7 +22,8 @@ AspNetLearning/
 │   └── TodoItem.cs
 ├── docs/
 │   ├── 01-hello-api.md
-│   └── 02-todo-list.md
+│   ├── 02-todo-list.md
+│   └── 03-create-todo.md
 ├── postman/
 │   ├── AspNetLearning.postman_collection.json
 │   └── environments/
@@ -207,6 +210,7 @@ feat/* → dev → main
 
 1. [第一課：讀懂問候 API](docs/01-hello-api.md)
 2. [第二課：讀懂 Class 與 List](docs/02-todo-list.md)
+3. [第三課：使用 POST 建立待辦事項](docs/03-create-todo.md)
 
 ## Postman Collection
 

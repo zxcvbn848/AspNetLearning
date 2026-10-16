@@ -72,6 +72,44 @@
         "description": "取得記憶體中的所有待辦事項，預期回傳 JSON 陣列。"
       },
       "response": []
+    },
+    {
+      "name": "第三課：建立待辦事項",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"閱讀 POST API 文件\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/todos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "todos"
+          ]
+        },
+        "description": "傳送 JSON Request Body 建立待辦事項，預期回傳 HTTP 201 Created。"
+      },
+      "response": []
     }
   ],
   "variable": [
