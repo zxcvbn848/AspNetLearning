@@ -110,6 +110,59 @@
         "description": "傳送 JSON Request Body 建立待辦事項，預期回傳 HTTP 201 Created。"
       },
       "response": []
+    },
+    {
+      "name": "第四課：更新待辦事項",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"認識 Controller 與 Service\",\n  \"isCompleted\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/todos/{{todoId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "todos",
+            "{{todoId}}"
+          ]
+        },
+        "description": "更新指定待辦事項，預期回傳 HTTP 200 與更新後資料。"
+      },
+      "response": []
+    },
+    {
+      "name": "第四課：刪除待辦事項",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/todos/{{todoId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "todos",
+            "{{todoId}}"
+          ]
+        },
+        "description": "刪除指定待辦事項，預期回傳 HTTP 204 No Content。"
+      },
+      "response": []
     }
   ],
   "variable": [
@@ -124,6 +177,12 @@
       "value": "Andy",
       "type": "string",
       "description": "第一課問候 API 使用的名稱。"
+    },
+    {
+      "key": "todoId",
+      "value": "2",
+      "type": "string",
+      "description": "第四課更新與刪除 API 使用的待辦事項 Id。"
     }
   ]
 }
