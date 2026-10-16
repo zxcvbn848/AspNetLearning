@@ -13,6 +13,8 @@ AspNetLearning/
 ├── compose.yaml
 ├── docs/
 │   └── 01-hello-api.md
+├── postman/
+│   └── AspNetLearning.postman_collection.json
 ├── Properties/
 │   └── launchSettings.json
 ├── bin/
@@ -175,3 +177,14 @@ feat/* → dev → main
 ## 學習課程
 
 1. [第一課：讀懂問候 API](docs/01-hello-api.md)
+
+## Postman Collection
+
+將 `postman/AspNetLearning.postman_collection.json` 匯入 Postman，即可呼叫目前的首頁與問候 API。
+
+Collection 預設使用：
+
+```text
+baseUrl = http://localhost:8180
+name = Andy
+```
