@@ -15,5 +15,8 @@ app.MapGet("/", () => "Hello World!");
 // 載入第一階段的問候 API 路由。
 app.MapHelloEndpoints();
 
+// 載入第二階段的待辦事項 API 路由。
+app.MapTodoEndpoints();
+
 // 啟動應用程式，開始監聽並處理 HTTP 請求。
 app.Run();

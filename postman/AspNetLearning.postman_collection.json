@@ -48,6 +48,30 @@
         "description": "將 name 變數放入路由，預期回傳包含問候文字的 JSON。"
       },
       "response": []
+    },
+    {
+      "name": "第二課：取得待辦清單",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/todos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "todos"
+          ]
+        },
+        "description": "取得記憶體中的所有待辦事項，預期回傳 JSON 陣列。"
+      },
+      "response": []
     }
   ],
   "variable": [
