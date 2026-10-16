@@ -11,6 +11,8 @@ AspNetLearning/
 ├── appsettings.json
 ├── appsettings.Development.json
 ├── compose.yaml
+├── docs/
+│   └── 01-hello-api.md
 ├── Properties/
 │   └── launchSettings.json
 ├── bin/
@@ -169,3 +171,7 @@ feat/* → dev → main
 - 功能與文件修改從 `dev` 建立 `feat/*` 分支。
 - 功能分支透過 Pull Request 合併至 `dev`。
 - 測試完成後，再透過 Pull Request 將 `dev` 合併至 `main`。
+
+## 學習課程
+
+1. [第一課：讀懂問候 API](docs/01-hello-api.md)
