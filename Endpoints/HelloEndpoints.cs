@@ -1,13 +1,22 @@
 // 宣告此檔案所屬的命名空間，用來組織相關程式碼並避免名稱衝突。
 namespace AspNetLearning.Endpoints;
 
-// public 表示其他檔案可以使用這個類別。
-// static 表示不需要先建立 HelloEndpoints 物件，就能使用類別中的方法。
+/// <summary>
+/// 集中管理第一階段的問候 API 路由。
+/// </summary>
+/// <remarks>
+/// static 表示不需要先建立 HelloEndpoints 物件，就能使用類別中的方法。
+/// </remarks>
 public static class HelloEndpoints
 {
-    // 這是 WebApplication 的擴充方法，負責集中註冊第一階段的問候 API。
-    // void 表示此方法執行完畢後不回傳資料。
-    // this WebApplication app 讓呼叫方式可以寫成 app.MapHelloEndpoints()。
+    /// <summary>
+    /// 將第一階段的問候 API 註冊到 ASP.NET Core 應用程式。
+    /// </summary>
+    /// <param name="app">目前正在設定的 ASP.NET Core 應用程式。</param>
+    /// <remarks>
+    /// this WebApplication app 讓呼叫方式可以寫成 app.MapHelloEndpoints()。
+    /// void 表示此方法執行完畢後不回傳資料。
+    /// </remarks>
     public static void MapHelloEndpoints(this WebApplication app)
     {
         // 註冊 HTTP GET /hello/{name} 路由。

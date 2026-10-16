@@ -6,6 +6,8 @@
 
 ```text
 AspNetLearning/
+├── .devcontainer/
+│   └── devcontainer.json
 ├── Program.cs
 ├── AspNetLearning.csproj
 ├── appsettings.json
@@ -23,6 +25,12 @@ AspNetLearning/
 ├── obj/
 └── .gitignore
 ```
+
+### `.devcontainer/devcontainer.json`
+
+讓 Cursor 進入現有的 .NET 10 SDK 容器開發。C# 語言伺服器會在容器內取得 SDK 與 MSBuild，因此 macOS 不需要另外安裝 .NET SDK。
+
+在 Cursor 的 Command Palette 執行 `Dev Containers: Reopen in Container` 即可進入容器。
 
 ### `Program.cs`
 

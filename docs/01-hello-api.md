@@ -70,6 +70,22 @@ Endpoints/HelloEndpoints.cs
 
 這樣新增其他階段時，可以建立新的端點檔案，不需要持續增加 `Program.cs` 的長度。
 
+## 滑鼠提示與 XML 文件註解
+
+一般的 `//` 註解只顯示在原始碼中。希望滑鼠移到自訂類別或方法時顯示說明，需要使用 `///` XML 文件註解：
+
+```csharp
+/// <summary>
+/// 將第一階段的問候 API 註冊到 ASP.NET Core 應用程式。
+/// </summary>
+/// <param name="app">目前正在設定的 ASP.NET Core 應用程式。</param>
+public static void MapHelloEndpoints(this WebApplication app)
+```
+
+- `<summary>` 說明類別或方法的用途。
+- `<param>` 說明方法參數。
+- C# 語言伺服器讀取這些內容後，會提供滑鼠提示與程式導覽。
+
 ## 第一行：建立 GET 路由
 
 ```csharp
