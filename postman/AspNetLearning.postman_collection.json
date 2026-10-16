@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "c98aebd4-bd56-4b53-bfad-4a2fcf820455",
     "name": "AspNetLearning",
-    "description": "ASP.NET Core 學習專案的 API 請求集合。啟動 Docker Compose 後即可使用。第五課將 Todo API 搬入 Controller，但網址與格式保持不變。",
+    "description": "ASP.NET Core 學習專案的 API 請求集合。啟動 Docker Compose 後即可使用。第六課由 Controller 呼叫 TodoService，但網址與格式保持不變。",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -69,7 +69,7 @@
             "todos"
           ]
         },
-        "description": "呼叫 TodosController.GetAll，取得記憶體中的所有待辦事項，預期回傳 JSON 陣列。"
+        "description": "呼叫 TodosController.GetAll，再由 TodoService 取得所有待辦事項，預期回傳 JSON 陣列。"
       },
       "response": []
     },
@@ -107,7 +107,7 @@
             "todos"
           ]
         },
-        "description": "傳送 JSON Request Body 給 TodosController.Create，預期回傳 HTTP 201 Created。"
+        "description": "傳送 JSON Request Body 給 TodosController.Create，再由 TodoService 建立資料，預期回傳 HTTP 201 Created。"
       },
       "response": []
     },
@@ -141,7 +141,7 @@
             "{{todoId}}"
           ]
         },
-        "description": "呼叫 TodosController.Update 更新指定待辦事項，預期回傳 HTTP 200 與更新後資料。"
+        "description": "呼叫 TodosController.Update，再由 TodoService 更新指定待辦事項，預期回傳 HTTP 200 與更新後資料。"
       },
       "response": []
     },
@@ -160,7 +160,7 @@
             "{{todoId}}"
           ]
         },
-        "description": "呼叫 TodosController.Delete 刪除指定待辦事項，預期回傳 HTTP 204 No Content。"
+        "description": "呼叫 TodosController.Delete，再由 TodoService 刪除指定待辦事項，預期回傳 HTTP 204 No Content。"
       },
       "response": []
     }
