@@ -6,11 +6,22 @@
 
 ```text
 AspNetLearning/
+├── .devcontainer/
+│   └── devcontainer.json
 ├── Program.cs
 ├── AspNetLearning.csproj
 ├── appsettings.json
 ├── appsettings.Development.json
 ├── compose.yaml
+├── Endpoints/
+│   └── HelloEndpoints.cs
+├── docs/
+│   └── 01-hello-api.md
+├── postman/
+│   ├── AspNetLearning.postman_collection.json
+│   └── environments/
+│       ├── AspNetLearning.local.postman_environment.json
+│       └── AspNetLearning.production.postman_environment.json
 ├── Properties/
 │   └── launchSettings.json
 ├── bin/
@@ -18,11 +29,22 @@ AspNetLearning/
 └── .gitignore
 ```
 
+### `.devcontainer/devcontainer.json`
+
+讓 Cursor 進入現有的 .NET 10 SDK 容器開發。C# 語言伺服器會在容器內取得 SDK 與 MSBuild，因此 macOS 不需要另外安裝 .NET SDK。
+
+在 Cursor 的 Command Palette 執行 `Dev Containers: Reopen in Container` 即可進入容器。
+
+容器中的網站已由 `dotnet watch` 執行。需要除錯時按下 F5，選擇 `.NET Core Attach (Docker)`，再從程序清單選擇 `AspNetLearning`；這會附加至既有網站，不會重複啟動並占用 `8080`。
+
 ### `Program.cs`
 
 ASP.NET Core 應用程式的進入點，負責建立、設定並啟動網站。
 
 ```csharp
+// 匯入問候 API 所在的命名空間。
+using AspNetLearning.Endpoints;
+
 // 建立 WebApplicationBuilder，載入設定並準備註冊服務。
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,9 +54,16 @@ var app = builder.Build();
 // 註冊 GET / 路由；收到請求時回傳 Hello World!。
 app.MapGet("/", () => "Hello World!");
 
+// 載入第一階段的問候 API 路由。
+app.MapHelloEndpoints();
+
 // 啟動網站並開始接收 HTTP 請求。
 app.Run();
 ```
+
+### `Endpoints/HelloEndpoints.cs`
+
+集中放置第一階段的問候 API。`Program.cs` 只負責啟動應用程式及載入端點，實際的路由與處理邏輯放在此檔案。
 
 ### `AspNetLearning.csproj`
 
@@ -169,3 +198,28 @@ feat/* → dev → main
 - 功能與文件修改從 `dev` 建立 `feat/*` 分支。
 - 功能分支透過 Pull Request 合併至 `dev`。
 - 測試完成後，再透過 Pull Request 將 `dev` 合併至 `main`。
+
+## 學習課程
+
+1. [第一課：讀懂問候 API](docs/01-hello-api.md)
+
+## Postman Collection
+
+將以下檔案匯入 Postman：
+
+```text
+postman/AspNetLearning.postman_collection.json
+postman/environments/AspNetLearning.local.postman_environment.json
+postman/environments/AspNetLearning.production.postman_environment.json
+```
+
+開發時選擇 `AspNetLearning - Local`；正式上線後，將正式 API 網址填入 `AspNetLearning - Production` 的 `baseUrl`，再切換環境即可使用同一組 Request。
+
+Local 環境預設使用：
+
+```text
+baseUrl = http://localhost:8180
+name = Andy
+```
+
+Production 範本的 `baseUrl` 刻意留空，避免尚未部署時誤送請求。密碼、Token 與其他機密資料不可提交到 GitHub，應在 Postman 中設定為敏感值。

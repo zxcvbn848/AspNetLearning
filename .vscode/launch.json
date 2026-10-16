@@ -1,0 +1,21 @@
+{
+  // 指定 Cursor 使用的除錯設定格式版本。
+  "version": "0.2.0",
+
+  // 定義可以從「執行與偵錯」面板選擇的除錯方式。
+  "configurations": [
+    {
+      // 顯示在 Cursor 除錯選單中的名稱。
+      "name": ".NET Core Attach (Docker)",
+
+      // 使用 .NET Core CLR 除錯器。
+      "type": "coreclr",
+
+      // 附加至既有程序，不再啟動第二個網站。
+      "request": "attach",
+
+      // 按下 F5 時顯示程序清單，讓使用者選擇 AspNetLearning 程序。
+      "processId": "${command:pickProcess}"
+    }
+  ]
+}
