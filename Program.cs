@@ -5,6 +5,10 @@ using AspNetLearning.Endpoints;
 // args 代表啟動程式時傳入的命令列參數。
 var builder = WebApplication.CreateBuilder(args);
 
+// 將 Controller 相關服務註冊到 ASP.NET Core 的 Dependency Injection 容器。
+// AddControllers 讓應用程式能辨識繼承 ControllerBase 並標有路由 Attribute 的類別。
+builder.Services.AddControllers();
+
 // 根據 builder 中的設定與服務，建立可以處理 HTTP 請求的 WebApplication。
 var app = builder.Build();
 
@@ -15,8 +19,8 @@ app.MapGet("/", () => "Hello World!");
 // 載入第一階段的問候 API 路由。
 app.MapHelloEndpoints();
 
-// 載入第二階段的待辦事項 API 路由。
-app.MapTodoEndpoints();
+// 尋找 Controller 上的 Route、HttpGet、HttpPost、HttpPut 與 HttpDelete 等 Attribute，並建立對應路由。
+app.MapControllers();
 
 // 啟動應用程式，開始監聽並處理 HTTP 請求。
 app.Run();
