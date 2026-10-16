@@ -22,12 +22,15 @@ AspNetLearning/
 │   └── HelloEndpoints.cs
 ├── Models/
 │   └── TodoItem.cs
+├── Services/
+│   └── TodoService.cs
 ├── docs/
 │   ├── 01-hello-api.md
 │   ├── 02-todo-list.md
 │   ├── 03-create-todo.md
 │   ├── 04-update-delete-todo.md
-│   └── 05-controller.md
+│   ├── 05-controller.md
+│   └── 06-service-dependency-injection.md
 ├── postman/
 │   ├── AspNetLearning.postman_collection.json
 │   └── environments/
@@ -217,6 +220,7 @@ feat/* → dev → main
 3. [第三課：使用 POST 建立待辦事項](docs/03-create-todo.md)
 4. [第四課：使用 PUT 與 DELETE](docs/04-update-delete-todo.md)
 5. [第五課：將 Todo API 搬入 Controller](docs/05-controller.md)
+6. [第六課：Service 與 Dependency Injection](docs/06-service-dependency-injection.md)
 
 ## Postman Collection
 
