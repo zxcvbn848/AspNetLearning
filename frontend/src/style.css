@@ -84,6 +84,11 @@ h1 {
 }
 
 .auth-form button { grid-column: 1 / -1; min-height: 44px; margin-top: 4px; color: white; background: var(--primary); font-weight: 700; }
+.auth-status { margin: 16px 0 0; color: var(--muted); }
+.user-details { display: grid; grid-template-columns: auto 1fr; gap: 10px 18px; margin: 16px 0 0; }
+.user-details div { display: contents; }
+.user-details dt { color: var(--muted); font-weight: 700; }
+.user-details dd { margin: 0; overflow-wrap: anywhere; }
 .create-form label { display: block; margin-bottom: 9px; font-weight: 700; }
 .input-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
 

@@ -2,6 +2,10 @@
 import { ref } from 'vue'
 import { loginUser } from '../services/authApi'
 
+const emit = defineEmits<{
+  loggedIn: []
+}>()
+
 const email = ref('')
 const password = ref('')
 const message = ref('')
@@ -18,6 +22,7 @@ async function submitLogin(): Promise<void> {
 
     // sessionStorage 關閉分頁後就會清除；下一階段會用它呼叫受保護 API。
     window.sessionStorage.setItem('accessToken', result.accessToken)
+    emit('loggedIn')
     password.value = ''
 
     const expiresAt = new Date(result.expiresAtUtc).toLocaleString('zh-TW')

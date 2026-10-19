@@ -29,6 +29,7 @@ AspNetLearning/
 │   └── HelloEndpoints.cs
 ├── frontend/
 │   ├── src/
+│   │   ├── components/CurrentUserPanel.vue
 │   │   ├── components/LoginForm.vue
 │   │   ├── components/RegisterForm.vue
 │   │   ├── components/TodoListItem.vue
@@ -60,6 +61,7 @@ AspNetLearning/
 │   ├── 08-vue-typescript-frontend.md
 │   ├── 09-member-registration.md
 │   ├── 10-member-login-jwt.md
+│   ├── 11-current-user-authorization.md
 │   └── development-roadmap.md
 ├── postman/
 │   ├── AspNetLearning.postman_collection.json

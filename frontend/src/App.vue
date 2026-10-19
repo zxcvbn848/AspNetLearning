@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // ref 建立響應式資料；資料改變時 Vue 會自動更新畫面。
 import { nextTick, onMounted, ref } from 'vue'
+import CurrentUserPanel from './components/CurrentUserPanel.vue'
 import LoginForm from './components/LoginForm.vue'
 import RegisterForm from './components/RegisterForm.vue'
 import TodoListItem from './components/TodoListItem.vue'
@@ -18,6 +19,7 @@ const editingTodo = ref<TodoItem | null>(null)
 const editTitle = ref('')
 const editError = ref('')
 const isEditing = ref(false)
+const authVersion = ref(0)
 
 /** 從 ASP.NET Core API 重新取得所有 Todo。 */
 async function loadTodos(): Promise<void> {
@@ -161,7 +163,9 @@ onMounted(loadTodos)
     </header>
 
     <RegisterForm />
-    <LoginForm />
+    <!-- key 改變時會重新建立元件，使登入成功後立即重新呼叫 GET /auth/me。 -->
+    <LoginForm @logged-in="authVersion++" />
+    <CurrentUserPanel :key="authVersion" />
 
     <!-- prevent 阻止瀏覽器送出表單後重新整理整頁。 -->
     <form class="create-form api-section" @submit.prevent="createTodo">

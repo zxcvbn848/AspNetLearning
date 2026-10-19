@@ -22,3 +22,12 @@ export async function loginUser(email: string, password: string): Promise<LoginR
 
   return response.json() as Promise<LoginResponse>
 }
+
+/** 使用 Bearer Token 呼叫 GET /auth/me 取得目前會員。 */
+export async function getCurrentUser(accessToken: string): Promise<UserResponse> {
+  const response = await request('/auth/me', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+
+  return response.json() as Promise<UserResponse>
+}

@@ -8,6 +8,7 @@
 frontend/
 ├── src/
 │   ├── components/
+│   │   ├── CurrentUserPanel.vue
 │   │   ├── LoginForm.vue
 │   │   ├── RegisterForm.vue
 │   │   └── TodoListItem.vue
@@ -30,6 +31,7 @@ frontend/
 ```
 
 - `App.vue`：管理畫面狀態與新增、修改、刪除流程。
+- `CurrentUserPanel.vue`：使用 JWT 呼叫受保護 API，顯示目前會員。
 - `LoginForm.vue`：驗證會員密碼，並在目前分頁保存 JWT。
 - `RegisterForm.vue`：顯示會員註冊表單，並呼叫註冊 API。
 - `TodoListItem.vue`：顯示單筆待辦事項，並把操作事件通知父元件。
