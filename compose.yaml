@@ -11,3 +11,30 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://0.0.0.0:8080
       DOTNET_USE_POLLING_FILE_WATCHER: "1"
+      # ASP.NET Core 使用雙底線表示設定的階層，本項會對應 ConnectionStrings:DefaultConnection。
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=aspnetlearning;Username=aspnetlearning;Password=${POSTGRES_PASSWORD:-aspnetlearning}
+    depends_on:
+      db:
+        # 等 PostgreSQL 通過健康檢查後才啟動網站，避免應用程式連線過早。
+        condition: service_healthy
+
+  db:
+    # 使用 PostgreSQL 18 的輕量 Alpine Linux 映像。
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: aspnetlearning
+      POSTGRES_USER: aspnetlearning
+      # 此預設密碼只供本機學習；可在未提交 Git 的 .env 以 POSTGRES_PASSWORD 覆蓋。
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aspnetlearning}
+    volumes:
+      # 將資料庫檔案保存在 Docker Volume，重建容器後資料仍存在。
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aspnetlearning -d aspnetlearning"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  # 宣告由 Docker 管理的 PostgreSQL 資料 Volume。
+  postgres_data:

@@ -42,10 +42,10 @@ public sealed class TodosController : ControllerBase
     /// <returns>HTTP 200 與待辦事項陣列。</returns>
     // HttpGet 表示這個 Action 處理 GET /todos。
     [HttpGet]
-    public ActionResult<IReadOnlyList<TodoItem>> GetAll()
+    public async Task<ActionResult<List<TodoItem>>> GetAll()
     {
-        // Controller 呼叫 Service 取得資料，不再直接操作 List。
-        IReadOnlyList<TodoItem> todoItems = _todoService.GetAll();
+        // await 等待資料庫查詢完成時，不會阻塞處理其他請求的 Thread。
+        List<TodoItem> todoItems = await _todoService.GetAllAsync();
 
         // Ok 會建立 HTTP 200 回應，並將 todoItems 自動序列化為 JSON。
         return Ok(todoItems);
@@ -58,7 +58,7 @@ public sealed class TodosController : ControllerBase
     /// <returns>成功時回傳 HTTP 201 與新資料；Title 空白時回傳 HTTP 400。</returns>
     // HttpPost 表示這個 Action 處理 POST /todos。
     [HttpPost]
-    public ActionResult<TodoItem> Create(CreateTodoRequest request)
+    public async Task<ActionResult<TodoItem>> Create(CreateTodoRequest request)
     {
         // IsNullOrWhiteSpace 會檢查 null、空字串及只含空白的文字。
         if (string.IsNullOrWhiteSpace(request.Title))
@@ -67,8 +67,14 @@ public sealed class TodosController : ControllerBase
             return BadRequest(new { message = "Title 不可為空白。" });
         }
 
+        // 在送進資料庫前檢查長度，避免 PostgreSQL 拒絕資料後變成 HTTP 500。
+        if (request.Title.Length > 100)
+        {
+            return BadRequest(new { message = "Title 最多只能有 100 個字元。" });
+        }
+
         // Controller 將已驗證的輸入交給 Service，由 Service 建立並保存 TodoItem。
-        TodoItem todoItem = _todoService.Create(request.Title);
+        TodoItem todoItem = await _todoService.CreateAsync(request.Title);
 
         // Created 會建立 HTTP 201 回應，並在 Location Header 提供新資源網址。
         return Created($"/todos/{todoItem.Id}", todoItem);
@@ -82,15 +88,20 @@ public sealed class TodosController : ControllerBase
     /// <returns>成功時回傳 HTTP 200；資料錯誤時回傳 400；找不到時回傳 404。</returns>
     // {id:int} 表示網址中的 id 必須是整數。
     [HttpPut("{id:int}")]
-    public ActionResult<TodoItem> Update(int id, UpdateTodoRequest request)
+    public async Task<ActionResult<TodoItem>> Update(int id, UpdateTodoRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Title))
         {
             return BadRequest(new { message = "Title 不可為空白。" });
         }
 
+        if (request.Title.Length > 100)
+        {
+            return BadRequest(new { message = "Title 最多只能有 100 個字元。" });
+        }
+
         // Service 尋找並更新資料；找不到時會回傳 null。
-        TodoItem? todoItem = _todoService.Update(id, request.Title, request.IsCompleted);
+        TodoItem? todoItem = await _todoService.UpdateAsync(id, request.Title, request.IsCompleted);
 
         // is null 用來判斷 Service 沒有找到指定資料。
         if (todoItem is null)
@@ -110,10 +121,10 @@ public sealed class TodosController : ControllerBase
     /// <returns>成功時回傳 HTTP 204；找不到時回傳 HTTP 404。</returns>
     // HttpDelete 表示這個 Action 處理 DELETE /todos/{id}。
     [HttpDelete("{id:int}")]
-    public IActionResult Delete(int id)
+    public async Task<IActionResult> Delete(int id)
     {
         // Service 刪除成功會回傳 true，找不到資料則回傳 false。
-        bool isDeleted = _todoService.Delete(id);
+        bool isDeleted = await _todoService.DeleteAsync(id);
 
         if (!isDeleted)
         {

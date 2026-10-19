@@ -18,6 +18,9 @@ AspNetLearning/
 │   └── UpdateTodoRequest.cs
 ├── Controllers/
 │   └── TodosController.cs
+├── Data/
+│   ├── AppDbContext.cs
+│   └── Migrations/
 ├── Endpoints/
 │   └── HelloEndpoints.cs
 ├── Models/
@@ -30,7 +33,8 @@ AspNetLearning/
 │   ├── 03-create-todo.md
 │   ├── 04-update-delete-todo.md
 │   ├── 05-controller.md
-│   └── 06-service-dependency-injection.md
+│   ├── 06-service-dependency-injection.md
+│   └── 07-postgresql-ef-core.md
 ├── postman/
 │   ├── AspNetLearning.postman_collection.json
 │   └── environments/
@@ -38,6 +42,7 @@ AspNetLearning/
 │       └── AspNetLearning.production.postman_environment.json
 ├── Properties/
 │   └── launchSettings.json
+├── dotnet-tools.json
 ├── bin/
 ├── obj/
 └── .gitignore
@@ -221,6 +226,7 @@ feat/* → dev → main
 4. [第四課：使用 PUT 與 DELETE](docs/04-update-delete-todo.md)
 5. [第五課：將 Todo API 搬入 Controller](docs/05-controller.md)
 6. [第六課：Service 與 Dependency Injection](docs/06-service-dependency-injection.md)
+7. [第七課：Entity Framework Core 與 PostgreSQL](docs/07-postgresql-ef-core.md)
 
 ## Postman Collection
 
