@@ -45,7 +45,8 @@ AspNetLearning/
 │   ├── 05-controller.md
 │   ├── 06-service-dependency-injection.md
 │   ├── 07-postgresql-ef-core.md
-│   └── 08-vue-typescript-frontend.md
+│   ├── 08-vue-typescript-frontend.md
+│   └── development-roadmap.md
 ├── postman/
 │   ├── AspNetLearning.postman_collection.json
 │   └── environments/
@@ -214,6 +215,8 @@ http://localhost:8180
 ```
 
 第八階段的 Vue 與 TypeScript 說明請閱讀 `docs/08-vue-typescript-frontend.md`。
+
+後續功能規劃請閱讀 `docs/development-roadmap.md`；下一階段預計建立會員系統。
 
 ## 查看執行紀錄
 

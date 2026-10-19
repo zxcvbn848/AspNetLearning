@@ -154,6 +154,36 @@ footer {
 
 .status-dot.connected::before { background: var(--success); }
 
+.edit-dialog {
+  width: min(calc(100% - 32px), 480px);
+  padding: 0;
+  border: 0;
+  border-radius: 20px;
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: 0 24px 80px rgb(23 32 51 / 30%);
+}
+
+.edit-dialog::backdrop { background: rgb(23 32 51 / 55%); backdrop-filter: blur(3px); }
+.edit-form { display: grid; gap: 12px; padding: 28px; }
+.edit-form h2 { margin-bottom: 0; font-size: 1.5rem; }
+.dialog-eyebrow { margin-bottom: 4px; color: var(--primary); font-size: 0.76rem; font-weight: 800; letter-spacing: 0.1em; }
+.edit-form label { margin-top: 6px; font-weight: 700; }
+
+.edit-form input {
+  width: 100%;
+  padding: 13px 15px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.edit-hint { margin-bottom: 0; color: var(--muted); font-size: 0.82rem; }
+.edit-error { min-height: 20px; margin-bottom: 0; color: var(--danger); font-size: 0.9rem; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+.dialog-actions button { min-width: 88px; padding: 11px 18px; font-weight: 700; }
+.secondary-button { color: var(--text); background: #eef0f5; }
+.primary-button { color: white; background: var(--primary); }
+
 @media (max-width: 560px) {
   body { padding: 20px 12px; }
   .todo-app { border-radius: 18px; }
@@ -161,6 +191,7 @@ footer {
   .input-row button { min-height: 44px; }
   .todo-item { grid-template-columns: auto 1fr; }
   .todo-actions { grid-column: 2; justify-content: flex-end; }
+  .edit-form { padding: 22px; }
 }
 
 @media (prefers-reduced-motion: no-preference) {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // ref 建立響應式資料；資料改變時 Vue 會自動更新畫面。
-import { onMounted, ref } from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
 import TodoListItem from './components/TodoListItem.vue'
 import { createTodoItem, deleteTodoItem, getTodoItems, updateTodoItem } from './services/todoApi'
 import type { TodoItem } from './types/todo'
@@ -11,6 +11,11 @@ const message = ref('')
 const isSuccess = ref(false)
 const isCreating = ref(false)
 const isConnected = ref(false)
+const editDialog = ref<HTMLDialogElement | null>(null)
+const editingTodo = ref<TodoItem | null>(null)
+const editTitle = ref('')
+const editError = ref('')
+const isEditing = ref(false)
 
 /** 從 ASP.NET Core API 重新取得所有 Todo。 */
 async function loadTodos(): Promise<void> {
@@ -58,26 +63,61 @@ async function toggleTodo(todo: TodoItem): Promise<void> {
   }
 }
 
-/** 取得新標題後，呼叫 PUT /todos/{id} 更新資料。 */
+/** 將待編輯資料放進表單，並開啟頁面內的自訂對話框。 */
 async function editTodo(todo: TodoItem): Promise<void> {
-  const title = window.prompt('修改待辦事項（最多 100 個字元）', todo.title)?.trim()
+  editingTodo.value = todo
+  editTitle.value = todo.title
+  editError.value = ''
 
-  if (!title || title === todo.title) {
+  // 等 Vue 建立 dialog 元素後，才呼叫瀏覽器的對話框 API。
+  await nextTick()
+  editDialog.value?.showModal()
+}
+
+/** 驗證表單後，呼叫 PUT /todos/{id} 更新資料。 */
+async function saveTodoEdit(): Promise<void> {
+  const todo = editingTodo.value
+  const title = editTitle.value.trim()
+
+  if (!todo) {
     return
   }
 
-  if (title.length > 100) {
-    showMessage('Title 最多只能有 100 個字元。')
+  if (!title) {
+    editError.value = '請輸入待辦事項。'
     return
   }
+
+  if (title === todo.title) {
+    editDialog.value?.close()
+    return
+  }
+
+  isEditing.value = true
+  editError.value = ''
 
   try {
     await updateTodoItem(todo.id, title, todo.isCompleted)
+    editDialog.value?.close()
     showMessage('待辦事項已更新。', true)
     await loadTodos()
   } catch (error) {
-    showError(error)
+    editError.value = error instanceof Error ? error.message : '發生未預期的錯誤。'
+  } finally {
+    isEditing.value = false
   }
+}
+
+/** 關閉編輯視窗；close 事件會清除暫存資料。 */
+function cancelEdit(): void {
+  editDialog.value?.close()
+}
+
+/** 對話框關閉後，清除上一筆編輯內容。 */
+function resetEdit(): void {
+  editingTodo.value = null
+  editTitle.value = ''
+  editError.value = ''
 }
 
 /** 使用者確認後，呼叫 DELETE /todos/{id}。 */
@@ -162,6 +202,37 @@ onMounted(loadTodos)
       <p v-else class="empty-state">目前沒有待辦事項。</p>
     </section>
   </main>
+
+  <!-- dialog 提供鍵盤焦點管理；內容與樣式由 Vue 頁面自行控制。 -->
+  <dialog ref="editDialog" class="edit-dialog" @close="resetEdit" @cancel.prevent="cancelEdit">
+    <form class="edit-form" @submit.prevent="saveTodoEdit">
+      <div>
+        <p class="dialog-eyebrow">編輯待辦事項</p>
+        <h2>修改內容</h2>
+      </div>
+
+      <label for="edit-title">待辦事項標題</label>
+      <input
+        id="edit-title"
+        v-model="editTitle"
+        maxlength="100"
+        autocomplete="off"
+        autofocus
+        required
+      >
+      <p class="edit-hint">最多 100 個字元</p>
+      <p class="edit-error" aria-live="polite">{{ editError }}</p>
+
+      <div class="dialog-actions">
+        <button type="button" class="secondary-button" :disabled="isEditing" @click="cancelEdit">
+          取消
+        </button>
+        <button type="submit" class="primary-button" :disabled="isEditing">
+          {{ isEditing ? '儲存中…' : '儲存' }}
+        </button>
+      </div>
+    </form>
+  </dialog>
 
   <footer>
     <span class="status-dot" :class="isConnected ? 'connected' : 'disconnected'">
