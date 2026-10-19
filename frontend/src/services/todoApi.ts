@@ -1,4 +1,5 @@
 import type { TodoItem } from '../types/todo'
+import { request } from './apiClient'
 
 // 開發時由 Vite Proxy 轉送，日後同網域部署也不需修改網址。
 const apiUrl = '/todos'
@@ -38,21 +39,4 @@ export async function updateTodoItem(
 /** 刪除指定待辦事項；HTTP 204 沒有 JSON 可解析。 */
 export async function deleteTodoItem(id: number): Promise<void> {
   await request(`${apiUrl}/${id}`, { method: 'DELETE' })
-}
-
-/** 將 API 的非成功回應統一轉成 Error。 */
-async function request(url: string, options: RequestInit = {}): Promise<Response> {
-  const response = await fetch(url, options)
-
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({})) as {
-      message?: string
-      errors?: Record<string, string[]>
-    }
-
-    const validationMessage = Object.values(body.errors ?? {}).flat()[0]
-    throw new Error(body.message ?? validationMessage ?? `請求失敗（HTTP ${response.status}）`)
-  }
-
-  return response
 }

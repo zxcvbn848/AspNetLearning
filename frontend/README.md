@@ -8,11 +8,15 @@
 frontend/
 ├── src/
 │   ├── components/
+│   │   ├── RegisterForm.vue
 │   │   └── TodoListItem.vue
 │   ├── services/
+│   │   ├── authApi.ts
+│   │   ├── apiClient.ts
 │   │   └── todoApi.ts
 │   ├── types/
-│   │   └── todo.ts
+│   │   ├── todo.ts
+│   │   └── user.ts
 │   ├── App.vue
 │   ├── main.ts
 │   └── style.css
@@ -25,6 +29,7 @@ frontend/
 ```
 
 - `App.vue`：管理畫面狀態與新增、修改、刪除流程。
+- `RegisterForm.vue`：顯示會員註冊表單，並呼叫註冊 API。
 - `TodoListItem.vue`：顯示單筆待辦事項，並把操作事件通知父元件。
 - `todoApi.ts`：集中呼叫 ASP.NET Core Todo API。
 - `todo.ts`：宣告前後端共用資料形狀的 TypeScript 型別。

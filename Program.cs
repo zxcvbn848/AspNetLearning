@@ -7,6 +7,10 @@ using AspNetLearning.Endpoints;
 // 匯入 TodoService 所在的命名空間，讓 Program.cs 可以註冊這個服務。
 using AspNetLearning.Services;
 
+// 匯入 User 與 ASP.NET Core 內建的密碼雜湊服務。
+using AspNetLearning.Models;
+using Microsoft.AspNetCore.Identity;
+
 // 匯入 Entity Framework Core，讓程式可以使用 UseNpgsql 與 Migrate。
 using Microsoft.EntityFrameworkCore;
 
@@ -31,6 +35,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // TodoService 與同一個 HTTP Request 的 AppDbContext 共用 Scoped 生命週期。
 builder.Services.AddScoped<TodoService>();
+
+// 每個 HTTP Request 建立一個 UserService，並使用 ASP.NET Core 內建 PasswordHasher。
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 // 根據 builder 中的設定與服務，建立可以處理 HTTP 請求的 WebApplication。
 var app = builder.Build();

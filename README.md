@@ -15,8 +15,10 @@ AspNetLearning/
 ├── compose.yaml
 ├── Contracts/
 │   ├── CreateTodoRequest.cs
+│   ├── RegisterRequest.cs
 │   └── UpdateTodoRequest.cs
 ├── Controllers/
+│   ├── AuthController.cs
 │   └── TodosController.cs
 ├── Data/
 │   ├── AppDbContext.cs
@@ -25,18 +27,24 @@ AspNetLearning/
 │   └── HelloEndpoints.cs
 ├── frontend/
 │   ├── src/
+│   │   ├── components/RegisterForm.vue
 │   │   ├── components/TodoListItem.vue
+│   │   ├── services/apiClient.ts
+│   │   ├── services/authApi.ts
 │   │   ├── services/todoApi.ts
 │   │   ├── types/todo.ts
+│   │   ├── types/user.ts
 │   │   ├── App.vue
 │   │   ├── main.ts
 │   │   └── style.css
 │   ├── package.json
 │   └── vite.config.ts
 ├── Models/
-│   └── TodoItem.cs
+│   ├── TodoItem.cs
+│   └── User.cs
 ├── Services/
-│   └── TodoService.cs
+│   ├── TodoService.cs
+│   └── UserService.cs
 ├── docs/
 │   ├── 01-hello-api.md
 │   ├── 02-todo-list.md
@@ -46,6 +54,7 @@ AspNetLearning/
 │   ├── 06-service-dependency-injection.md
 │   ├── 07-postgresql-ef-core.md
 │   ├── 08-vue-typescript-frontend.md
+│   ├── 09-member-registration.md
 │   └── development-roadmap.md
 ├── postman/
 │   ├── AspNetLearning.postman_collection.json
