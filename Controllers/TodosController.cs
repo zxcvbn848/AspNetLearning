@@ -4,6 +4,9 @@ using AspNetLearning.Contracts;
 // 匯入待辦事項的資料模型。
 using AspNetLearning.Models;
 
+// 匯入負責 Todo CRUD 邏輯的 Service。
+using AspNetLearning.Services;
+
 // 匯入 ControllerBase、HTTP 路由 Attribute 與 ActionResult 等 ASP.NET Core MVC 類別。
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,25 +22,19 @@ namespace AspNetLearning.Controllers;
 [Route("todos")]
 public sealed class TodosController : ControllerBase
 {
-    // readonly 表示 TodoItems 不能改指向其他 List，但 List 內的資料仍可新增、修改與刪除。
-    // static 讓每次 HTTP 請求建立的 Controller 物件共用同一份練習資料。
-    // shortcut: 目前使用記憶體資料且不支援多使用者同時寫入，學到 Service 與資料庫時移出 Controller。
-    private static readonly List<TodoItem> TodoItems = new()
+    // readonly 表示建構完成後，_todoService 不可以改指向另一個 TodoService 物件。
+    private readonly TodoService _todoService;
+
+    /// <summary>
+    /// 建立 TodosController，並接收 Dependency Injection 容器提供的 TodoService。
+    /// </summary>
+    /// <param name="todoService">負責管理待辦事項資料與 CRUD 邏輯的服務。</param>
+    // 這個方法與類別同名且沒有回傳型別，因此是 Constructor（建構式）。
+    public TodosController(TodoService todoService)
     {
-        // new TodoItem 會建立一筆待辦事項；大括號內是物件初始化設定。
-        new TodoItem
-        {
-            Id = 1,
-            Title = "閱讀第一階段文件",
-            IsCompleted = true
-        },
-        new TodoItem
-        {
-            Id = 2,
-            Title = "認識 Class 與 List",
-            IsCompleted = false
-        }
-    };
+        // 將傳入的 todoService 保存到欄位，讓其他 Action 可以使用同一個服務。
+        _todoService = todoService;
+    }
 
     /// <summary>
     /// 取得所有待辦事項。
@@ -45,10 +42,13 @@ public sealed class TodosController : ControllerBase
     /// <returns>HTTP 200 與待辦事項陣列。</returns>
     // HttpGet 表示這個 Action 處理 GET /todos。
     [HttpGet]
-    public ActionResult<List<TodoItem>> GetAll()
+    public ActionResult<IReadOnlyList<TodoItem>> GetAll()
     {
-        // Ok 會建立 HTTP 200 回應，並將 TodoItems 自動序列化為 JSON。
-        return Ok(TodoItems);
+        // Controller 呼叫 Service 取得資料，不再直接操作 List。
+        IReadOnlyList<TodoItem> todoItems = _todoService.GetAll();
+
+        // Ok 會建立 HTTP 200 回應，並將 todoItems 自動序列化為 JSON。
+        return Ok(todoItems);
     }
 
     /// <summary>
@@ -67,21 +67,8 @@ public sealed class TodosController : ControllerBase
             return BadRequest(new { message = "Title 不可為空白。" });
         }
 
-        // 如果清單沒有資料，第一個 Id 使用 1；否則使用目前最大 Id 加 1。
-        int nextId = TodoItems.Count == 0
-            ? 1
-            : TodoItems.Max(todoItem => todoItem.Id) + 1;
-
-        // 根據 Request Body 建立新的 TodoItem 物件。
-        TodoItem todoItem = new()
-        {
-            Id = nextId,
-            Title = request.Title.Trim(),
-            IsCompleted = false
-        };
-
-        // Add 將新物件加入記憶體中的 List。
-        TodoItems.Add(todoItem);
+        // Controller 將已驗證的輸入交給 Service，由 Service 建立並保存 TodoItem。
+        TodoItem todoItem = _todoService.Create(request.Title);
 
         // Created 會建立 HTTP 201 回應，並在 Location Header 提供新資源網址。
         return Created($"/todos/{todoItem.Id}", todoItem);
@@ -97,24 +84,20 @@ public sealed class TodosController : ControllerBase
     [HttpPut("{id:int}")]
     public ActionResult<TodoItem> Update(int id, UpdateTodoRequest request)
     {
-        // FirstOrDefault 尋找第一筆 Id 相符的資料；找不到時回傳 null。
-        TodoItem? todoItem = TodoItems.FirstOrDefault(item => item.Id == id);
-
-        // is null 用來判斷變數目前沒有指向任何物件。
-        if (todoItem is null)
-        {
-            // NotFound 會建立 HTTP 404 回應。
-            return NotFound(new { message = $"找不到 Id 為 {id} 的待辦事項。" });
-        }
-
         if (string.IsNullOrWhiteSpace(request.Title))
         {
             return BadRequest(new { message = "Title 不可為空白。" });
         }
 
-        // 修改找到的 TodoItem；Trim 會移除文字前後的空白。
-        todoItem.Title = request.Title.Trim();
-        todoItem.IsCompleted = request.IsCompleted;
+        // Service 尋找並更新資料；找不到時會回傳 null。
+        TodoItem? todoItem = _todoService.Update(id, request.Title, request.IsCompleted);
+
+        // is null 用來判斷 Service 沒有找到指定資料。
+        if (todoItem is null)
+        {
+            // NotFound 會建立 HTTP 404 回應。
+            return NotFound(new { message = $"找不到 Id 為 {id} 的待辦事項。" });
+        }
 
         // Ok 會建立 HTTP 200 回應，並回傳更新後的資料。
         return Ok(todoItem);
@@ -129,15 +112,13 @@ public sealed class TodosController : ControllerBase
     [HttpDelete("{id:int}")]
     public IActionResult Delete(int id)
     {
-        TodoItem? todoItem = TodoItems.FirstOrDefault(item => item.Id == id);
+        // Service 刪除成功會回傳 true，找不到資料則回傳 false。
+        bool isDeleted = _todoService.Delete(id);
 
-        if (todoItem is null)
+        if (!isDeleted)
         {
             return NotFound(new { message = $"找不到 Id 為 {id} 的待辦事項。" });
         }
-
-        // Remove 會從 List 中移除找到的物件。
-        TodoItems.Remove(todoItem);
 
         // NoContent 會建立沒有 Response Body 的 HTTP 204 回應。
         return NoContent();
