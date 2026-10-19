@@ -38,6 +38,23 @@ services:
       timeout: 5s
       retries: 10
 
+  frontend:
+    # 使用 Node.js 22 執行 Vue 3 + TypeScript 的 Vite 開發伺服器。
+    image: node:22-alpine
+    working_dir: /frontend
+    command: sh -c "npm install && npm run dev"
+    ports:
+      # 前端使用 8181，後端 API 保持 8180。
+      - "127.0.0.1:8181:5173"
+    volumes:
+      - ./frontend:/frontend
+      # node_modules 放在 Docker Volume，避免寫入 Mac 專案目錄。
+      - frontend_node_modules:/frontend/node_modules
+    depends_on:
+      - app
+
 volumes:
   # 宣告由 Docker 管理的 PostgreSQL 資料 Volume。
   postgres_data:
+  # 保存前端容器安裝的 npm 套件。
+  frontend_node_modules:

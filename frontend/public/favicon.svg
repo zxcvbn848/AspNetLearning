@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- 圓角底色沿用網站的主色，確保瀏覽器深色與淺色分頁都容易辨識。 -->
+  <rect width="64" height="64" rx="14" fill="#5b5bd6"/>
+  <!-- 使用程式碼括號代表這是集中串接 API 的開發平台。 -->
+  <path d="M25 18 12 32l13 14M39 18l13 14-13 14" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

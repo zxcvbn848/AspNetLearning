@@ -23,6 +23,16 @@ AspNetLearning/
 │   └── Migrations/
 ├── Endpoints/
 │   └── HelloEndpoints.cs
+├── frontend/
+│   ├── src/
+│   │   ├── components/TodoListItem.vue
+│   │   ├── services/todoApi.ts
+│   │   ├── types/todo.ts
+│   │   ├── App.vue
+│   │   ├── main.ts
+│   │   └── style.css
+│   ├── package.json
+│   └── vite.config.ts
 ├── Models/
 │   └── TodoItem.cs
 ├── Services/
@@ -34,7 +44,9 @@ AspNetLearning/
 │   ├── 04-update-delete-todo.md
 │   ├── 05-controller.md
 │   ├── 06-service-dependency-injection.md
-│   └── 07-postgresql-ef-core.md
+│   ├── 07-postgresql-ef-core.md
+│   ├── 08-vue-typescript-frontend.md
+│   └── development-roadmap.md
 ├── postman/
 │   ├── AspNetLearning.postman_collection.json
 │   └── environments/
@@ -166,20 +178,20 @@ Docker 啟動命令使用 `--no-launch-profile`，因此容器不會載入此檔
 
 告訴 Git 忽略不需要提交的檔案與目錄，例如 `bin/`、`obj/` 及編輯器暫存檔。
 
-## HTTP 請求流程
+## 前端與 API 請求流程
 
 ```text
-Chrome 開啟 http://localhost:8180
+Chrome 開啟 http://localhost:8181
     ↓
-Docker 將 Mac 的 8180 轉送至容器的 8080
+Vue 3 + TypeScript 顯示待辦清單
     ↓
-ASP.NET Core 收到 GET /
+Vite 將 /todos 轉送至 app:8080
     ↓
-Program.cs 中的 MapGet("/") 處理請求
+ASP.NET Core Controller → Service → EF Core
     ↓
-Lambda 運算式回傳 Hello World!
+PostgreSQL 讀寫資料
     ↓
-Chrome 顯示 Hello World!
+JSON 回到 Vue，Vue 更新畫面
 ```
 
 ## 啟動專案
@@ -190,11 +202,21 @@ Chrome 顯示 Hello World!
 docker compose up -d
 ```
 
-開啟網站：
+開啟 Vue 前端：
+
+```text
+http://localhost:8181
+```
+
+後端 API 仍可單獨從以下網址存取：
 
 ```text
 http://localhost:8180
 ```
+
+第八階段的 Vue 與 TypeScript 說明請閱讀 `docs/08-vue-typescript-frontend.md`。
+
+後續功能規劃請閱讀 `docs/development-roadmap.md`；下一階段預計建立會員系統。
 
 ## 查看執行紀錄
 
