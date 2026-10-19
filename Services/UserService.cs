@@ -93,4 +93,13 @@ public sealed class UserService
 
         return user;
     }
+
+    /// <summary>根據 JWT 中的會員 Id 取得目前會員。</summary>
+    public async Task<User?> GetByIdAsync(int id)
+    {
+        // AsNoTracking 表示這次只讀取資料，不需要追蹤後續變更。
+        return await _dbContext.Users
+            .AsNoTracking()
+            .SingleOrDefaultAsync(user => user.Id == id);
+    }
 }

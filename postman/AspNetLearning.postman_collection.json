@@ -289,6 +289,61 @@
         }
       ],
       "response": []
+    },
+    {
+      "name": "第十一課：取得目前會員",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/me",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "me"
+          ]
+        },
+        "description": "使用登入後保存的 Bearer Token 取得目前會員，預期回傳 HTTP 200。缺少、無效或過期 Token 會回傳 HTTP 401。"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('有效 Token 回傳 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const response = pm.response.json();",
+              "pm.test('回傳登入會員且不包含密碼資料', function () {",
+              "    pm.expect(response.email).to.eql(pm.collectionVariables.get('registerEmail'));",
+              "    pm.expect(response).not.to.have.property('password');",
+              "    pm.expect(response).not.to.have.property('passwordHash');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
     }
   ],
   "variable": [
