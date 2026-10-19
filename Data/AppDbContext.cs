@@ -20,6 +20,9 @@ public sealed class AppDbContext : DbContext
     /// <summary>代表 PostgreSQL 中的 todo_items 資料表。</summary>
     public DbSet<TodoItem> TodoItems => Set<TodoItem>();
 
+    /// <summary>代表 PostgreSQL 中的 users 資料表。</summary>
+    public DbSet<User> Users => Set<User>();
+
     /// <summary>
     /// 設定 TodoItem 與 PostgreSQL 資料表的對應規則及初始資料。
     /// </summary>
@@ -53,6 +56,26 @@ public sealed class AppDbContext : DbContext
                     Title = "認識 Class 與 List",
                     IsCompleted = false
                 });
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.ToTable("users");
+            entity.HasKey(user => user.Id);
+
+            entity.Property(user => user.Email)
+                .IsRequired()
+                .HasMaxLength(254);
+
+            // Unique Index 讓 PostgreSQL 從資料庫層阻止重複 Email。
+            entity.HasIndex(user => user.Email)
+                .IsUnique();
+
+            entity.Property(user => user.PasswordHash)
+                .IsRequired();
+
+            entity.Property(user => user.CreatedAtUtc)
+                .IsRequired();
         });
     }
 }

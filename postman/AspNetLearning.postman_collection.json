@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "c98aebd4-bd56-4b53-bfad-4a2fcf820455",
     "name": "AspNetLearning",
-    "description": "ASP.NET Core 學習專案的 API 請求集合。啟動 Docker Compose 後即可使用。第七課使用 Entity Framework Core 將 Todo 保存到 PostgreSQL，但網址與格式保持不變。",
+    "description": "ASP.NET Core 學習專案的 API 請求集合。啟動 Docker Compose 後即可使用。包含 Todo CRUD 與第九課會員註冊 API。",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -162,6 +162,64 @@
         },
         "description": "透過 TodoService 與 EF Core 刪除 PostgreSQL 中的待辦事項，預期回傳 HTTP 204 No Content。"
       },
+      "response": []
+    },
+    {
+      "name": "第九課：會員註冊",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"Learning123!\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        },
+        "description": "建立會員，預期回傳 HTTP 201 與不含密碼雜湊的會員資料。重複 Email 會回傳 HTTP 409。"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('註冊成功回傳 201', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('回應不包含密碼與密碼雜湊', function () {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).not.to.have.property('password');",
+              "    pm.expect(response).not.to.have.property('passwordHash');",
+              "});"
+            ]
+          }
+        }
+      ],
       "response": []
     }
   ],

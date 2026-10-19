@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // ref 建立響應式資料；資料改變時 Vue 會自動更新畫面。
 import { nextTick, onMounted, ref } from 'vue'
+import RegisterForm from './components/RegisterForm.vue'
 import TodoListItem from './components/TodoListItem.vue'
 import { createTodoItem, deleteTodoItem, getTodoItems, updateTodoItem } from './services/todoApi'
 import type { TodoItem } from './types/todo'
@@ -158,8 +159,11 @@ onMounted(loadTodos)
       <p class="subtitle">集中操作與驗證 AspNetLearning 專案的所有 API。</p>
     </header>
 
+    <RegisterForm />
+
     <!-- prevent 阻止瀏覽器送出表單後重新整理整頁。 -->
-    <form class="create-form" @submit.prevent="createTodo">
+    <form class="create-form api-section" @submit.prevent="createTodo">
+      <p class="section-kicker">POST /todos</p>
       <label for="new-title">新增待辦事項</label>
       <div class="input-row">
         <!-- v-model 讓輸入框與 newTitle 保持雙向同步。 -->

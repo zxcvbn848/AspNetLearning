@@ -14,6 +14,11 @@ export default defineConfig({
         target: 'http://app:8080',
         changeOrigin: true,
       },
+      // 將會員註冊與後續登入 API 轉送到 ASP.NET Core app 服務。
+      '/auth': {
+        target: 'http://app:8080',
+        changeOrigin: true,
+      },
     },
   },
 })
