@@ -1,11 +1,17 @@
 // 匯入 Todo API 接收的 Request 類別。
 using AspNetLearning.Contracts;
 
+// 匯入從 JWT Claim 讀取會員 Id 的 Extension Method。
+using AspNetLearning.Extensions;
+
 // 匯入待辦事項的資料模型。
 using AspNetLearning.Models;
 
 // 匯入負責 Todo CRUD 邏輯的 Service。
 using AspNetLearning.Services;
+
+// 匯入 Authorize Attribute，讓整個 Controller 都必須通過 JWT 驗證。
+using Microsoft.AspNetCore.Authorization;
 
 // 匯入 ControllerBase、HTTP 路由 Attribute 與 ActionResult 等 ASP.NET Core MVC 類別。
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +24,7 @@ namespace AspNetLearning.Controllers;
 /// </summary>
 // ApiController 會啟用 Web API Controller 的行為，例如從 Request Body 綁定複雜型別。
 [ApiController]
+[Authorize]
 // Route 指定這個 Controller 內所有 Action 共用的網址前綴。
 [Route("todos")]
 public sealed class TodosController : ControllerBase
@@ -44,8 +51,13 @@ public sealed class TodosController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<TodoItem>>> GetAll()
     {
+        if (!User.TryGetUserId(out int userId))
+        {
+            return Unauthorized(new { message = "Token 缺少有效的會員 Id。" });
+        }
+
         // await 等待資料庫查詢完成時，不會阻塞處理其他請求的 Thread。
-        List<TodoItem> todoItems = await _todoService.GetAllAsync();
+        List<TodoItem> todoItems = await _todoService.GetAllAsync(userId);
 
         // Ok 會建立 HTTP 200 回應，並將 todoItems 自動序列化為 JSON。
         return Ok(todoItems);
@@ -60,6 +72,11 @@ public sealed class TodosController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<TodoItem>> Create(CreateTodoRequest request)
     {
+        if (!User.TryGetUserId(out int userId))
+        {
+            return Unauthorized(new { message = "Token 缺少有效的會員 Id。" });
+        }
+
         // IsNullOrWhiteSpace 會檢查 null、空字串及只含空白的文字。
         if (string.IsNullOrWhiteSpace(request.Title))
         {
@@ -74,7 +91,7 @@ public sealed class TodosController : ControllerBase
         }
 
         // Controller 將已驗證的輸入交給 Service，由 Service 建立並保存 TodoItem。
-        TodoItem todoItem = await _todoService.CreateAsync(request.Title);
+        TodoItem todoItem = await _todoService.CreateAsync(userId, request.Title);
 
         // Created 會建立 HTTP 201 回應，並在 Location Header 提供新資源網址。
         return Created($"/todos/{todoItem.Id}", todoItem);
@@ -90,6 +107,11 @@ public sealed class TodosController : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<ActionResult<TodoItem>> Update(int id, UpdateTodoRequest request)
     {
+        if (!User.TryGetUserId(out int userId))
+        {
+            return Unauthorized(new { message = "Token 缺少有效的會員 Id。" });
+        }
+
         if (string.IsNullOrWhiteSpace(request.Title))
         {
             return BadRequest(new { message = "Title 不可為空白。" });
@@ -101,7 +123,7 @@ public sealed class TodosController : ControllerBase
         }
 
         // Service 尋找並更新資料；找不到時會回傳 null。
-        TodoItem? todoItem = await _todoService.UpdateAsync(id, request.Title, request.IsCompleted);
+        TodoItem? todoItem = await _todoService.UpdateAsync(userId, id, request.Title, request.IsCompleted);
 
         // is null 用來判斷 Service 沒有找到指定資料。
         if (todoItem is null)
@@ -123,8 +145,13 @@ public sealed class TodosController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
+        if (!User.TryGetUserId(out int userId))
+        {
+            return Unauthorized(new { message = "Token 缺少有效的會員 Id。" });
+        }
+
         // Service 刪除成功會回傳 true，找不到資料則回傳 false。
-        bool isDeleted = await _todoService.DeleteAsync(id);
+        bool isDeleted = await _todoService.DeleteAsync(userId, id);
 
         if (!isDeleted)
         {

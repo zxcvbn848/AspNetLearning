@@ -20,4 +20,9 @@ public sealed class TodoItem
     /// 待辦事項是否已完成。
     /// </summary>
     public bool IsCompleted { get; set; }
+
+    /// <summary>
+    /// 擁有這筆待辦事項的會員 Id；舊資料保留 null，不會顯示給任何會員。
+    /// </summary>
+    public int? UserId { get; set; }
 }

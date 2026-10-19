@@ -24,12 +24,14 @@ public sealed class TodoService
     /// <summary>
     /// 從資料庫取得所有待辦事項。
     /// </summary>
+    /// <param name="userId">目前登入會員的 Id。</param>
     /// <returns>依照 Id 排序的待辦事項清單。</returns>
-    public async Task<List<TodoItem>> GetAllAsync()
+    public async Task<List<TodoItem>> GetAllAsync(int userId)
     {
         // AsNoTracking 表示這次只讀取資料，不需要 EF Core 追蹤物件變更。
         return await _dbContext.TodoItems
             .AsNoTracking()
+            .Where(todoItem => todoItem.UserId == userId)
             .OrderBy(todoItem => todoItem.Id)
             .ToListAsync();
     }
@@ -37,15 +39,17 @@ public sealed class TodoService
     /// <summary>
     /// 建立並保存一筆待辦事項。
     /// </summary>
+    /// <param name="userId">擁有這筆待辦事項的會員 Id。</param>
     /// <param name="title">待辦事項的文字內容。</param>
     /// <returns>包含資料庫產生 Id 的待辦事項。</returns>
-    public async Task<TodoItem> CreateAsync(string title)
+    public async Task<TodoItem> CreateAsync(int userId, string title)
     {
         // Id 不需手動設定，PostgreSQL 會在新增資料時自動產生。
         TodoItem todoItem = new()
         {
             Title = title.Trim(),
-            IsCompleted = false
+            IsCompleted = false,
+            UserId = userId
         };
 
         // Add 將物件標記成待新增狀態，尚未寫入資料庫。
@@ -60,14 +64,16 @@ public sealed class TodoService
     /// <summary>
     /// 更新指定待辦事項。
     /// </summary>
+    /// <param name="userId">目前登入會員的 Id。</param>
     /// <param name="id">要更新的待辦事項 Id。</param>
     /// <param name="title">更新後的文字內容。</param>
     /// <param name="isCompleted">更新後的完成狀態。</param>
     /// <returns>更新後的待辦事項；找不到時回傳 null。</returns>
-    public async Task<TodoItem?> UpdateAsync(int id, string title, bool isCompleted)
+    public async Task<TodoItem?> UpdateAsync(int userId, int id, string title, bool isCompleted)
     {
-        // FindAsync 使用 Primary Key 尋找資料；找不到時回傳 null。
-        TodoItem? todoItem = await _dbContext.TodoItems.FindAsync(id);
+        // 同時比對 Id 與 UserId，避免會員修改其他人的 Todo。
+        TodoItem? todoItem = await _dbContext.TodoItems
+            .SingleOrDefaultAsync(todoItem => todoItem.Id == id && todoItem.UserId == userId);
 
         if (todoItem is null)
         {
@@ -86,11 +92,14 @@ public sealed class TodoService
     /// <summary>
     /// 刪除指定待辦事項。
     /// </summary>
+    /// <param name="userId">目前登入會員的 Id。</param>
     /// <param name="id">要刪除的待辦事項 Id。</param>
     /// <returns>刪除成功回傳 true；找不到資料回傳 false。</returns>
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int userId, int id)
     {
-        TodoItem? todoItem = await _dbContext.TodoItems.FindAsync(id);
+        // 同時比對 Id 與 UserId，避免會員刪除其他人的 Todo。
+        TodoItem? todoItem = await _dbContext.TodoItems
+            .SingleOrDefaultAsync(todoItem => todoItem.Id == id && todoItem.UserId == userId);
 
         if (todoItem is null)
         {

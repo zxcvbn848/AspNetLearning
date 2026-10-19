@@ -175,6 +175,7 @@ footer {
 }
 
 .status-dot.connected::before { background: var(--success); }
+.status-dot.pending::before { background: var(--muted); }
 
 .edit-dialog {
   width: min(calc(100% - 32px), 480px);

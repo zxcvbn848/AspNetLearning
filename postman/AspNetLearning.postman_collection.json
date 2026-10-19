@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "c98aebd4-bd56-4b53-bfad-4a2fcf820455",
     "name": "AspNetLearning",
-    "description": "ASP.NET Core 學習專案的 API 請求集合。啟動 Docker Compose 後即可使用。包含 Todo CRUD 與第九課會員註冊 API。",
+    "description": "ASP.NET Core 學習專案的 API 請求集合。包含會員註冊、JWT 登入、目前會員與會員專屬 Todo CRUD。",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -69,9 +69,32 @@
             "todos"
           ]
         },
-        "description": "透過 TodoService 與 EF Core 從 PostgreSQL 取得所有待辦事項，預期回傳 JSON 陣列。"
+        "description": "使用 Bearer Token 取得目前登入會員自己的待辦事項，預期回傳 HTTP 200 與 JSON 陣列。",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        }
       },
-      "response": []
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"取得會員自己的待辦清單會回傳 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "第三課：建立待辦事項",
@@ -107,9 +130,35 @@
             "todos"
           ]
         },
-        "description": "透過 TodoService 與 EF Core 將待辦事項寫入 PostgreSQL，預期回傳 HTTP 201 Created。"
+        "description": "使用 Bearer Token 建立目前會員的待辦事項，預期回傳 HTTP 201，並自動保存新的 todoId。",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        }
       },
-      "response": []
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"建立會員自己的待辦事項會回傳 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "const response = pm.response.json();",
+              "pm.collectionVariables.set(\"todoId\", response.id);"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "第四課：更新待辦事項",
@@ -141,9 +190,32 @@
             "{{todoId}}"
           ]
         },
-        "description": "透過 TodoService 與 EF Core 更新 PostgreSQL 中的待辦事項，預期回傳 HTTP 200 與更新後資料。"
+        "description": "使用 Bearer Token 更新目前會員自己的待辦事項，預期回傳 HTTP 200；其他會員的資料會回傳 404。",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        }
       },
-      "response": []
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"更新會員自己的待辦事項會回傳 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "第四課：刪除待辦事項",
@@ -160,9 +232,32 @@
             "{{todoId}}"
           ]
         },
-        "description": "透過 TodoService 與 EF Core 刪除 PostgreSQL 中的待辦事項，預期回傳 HTTP 204 No Content。"
+        "description": "使用 Bearer Token 刪除目前會員自己的待辦事項，預期回傳 HTTP 204；其他會員的資料會回傳 404。",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        }
       },
-      "response": []
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"刪除會員自己的待辦事項會回傳 204\", function () {",
+              "    pm.response.to.have.status(204);",
+              "});"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "第九課：會員註冊",

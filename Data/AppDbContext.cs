@@ -42,6 +42,15 @@ public sealed class AppDbContext : DbContext
                 .IsRequired()
                 .HasMaxLength(100);
 
+            // 舊 Todo 的 UserId 可以是 null；新 Todo 都會由 JWT 會員建立。
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(todoItem => todoItem.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // 每次依會員查詢清單時，可使用此索引快速找到該會員的 Todo。
+            entity.HasIndex(todoItem => todoItem.UserId);
+
             // HasData 讓第一個 Migration 建立資料表時一併加入學習資料。
             entity.HasData(
                 new TodoItem
