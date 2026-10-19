@@ -7,12 +7,12 @@
 - [x] 建立會員資料模型與資料庫 Migration
 - [x] 建立註冊 API，驗證 Email、密碼與重複帳號
 - [x] 使用安全的密碼雜湊保存密碼，不儲存明文密碼
-- [ ] 建立登入 API 並簽發 JWT
+- [x] 建立登入 API 並簽發 JWT
 - [ ] 建立取得目前登入會員資料的 API
 - [ ] 使用授權機制保護需要登入的 API
 - [x] 建立 Vue 註冊畫面
-- [ ] 建立 Vue 登入畫面
-- [ ] 在 Postman Collection 加入會員 API 與 Token 變數
+- [x] 建立 Vue 登入畫面
+- [x] 在 Postman Collection 加入會員 API 與 Token 變數
 - [ ] 補上會員系統的學習文件與測試步驟
 
 ## 建議學習順序

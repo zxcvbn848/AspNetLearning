@@ -50,7 +50,7 @@ function showMessage(text: string, success = false): void {
     </div>
 
     <!-- submit.prevent 呼叫 Vue 函式，避免瀏覽器重新整理整頁。 -->
-    <form class="register-form" @submit.prevent="submitRegistration">
+    <form class="auth-form register-form" @submit.prevent="submitRegistration">
       <div class="form-field email-field">
         <label for="register-email">Email</label>
         <input

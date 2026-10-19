@@ -4,3 +4,11 @@ export interface UserResponse {
   email: string
   createdAtUtc: string
 }
+
+/** 登入 API 回傳的 JWT、到期時間與會員資料。 */
+export interface LoginResponse {
+  accessToken: string
+  tokenType: string
+  expiresAtUtc: string
+  user: UserResponse
+}

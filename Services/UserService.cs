@@ -59,4 +59,38 @@ public sealed class UserService
             return null;
         }
     }
+
+    /// <summary>
+    /// 驗證 Email 與密碼；任一項不正確時回傳 null。
+    /// </summary>
+    public async Task<User?> AuthenticateAsync(string email, string password)
+    {
+        string normalizedEmail = email.Trim().ToLowerInvariant();
+        User? user = await _dbContext.Users
+            .SingleOrDefaultAsync(user => user.Email == normalizedEmail);
+
+        if (user is null)
+        {
+            return null;
+        }
+
+        PasswordVerificationResult result = _passwordHasher.VerifyHashedPassword(
+            user,
+            user.PasswordHash,
+            password);
+
+        if (result == PasswordVerificationResult.Failed)
+        {
+            return null;
+        }
+
+        // ASP.NET Core 日後提升雜湊參數時，成功登入即可更新舊雜湊。
+        if (result == PasswordVerificationResult.SuccessRehashNeeded)
+        {
+            user.PasswordHash = _passwordHasher.HashPassword(user, password);
+            await _dbContext.SaveChangesAsync();
+        }
+
+        return user;
+    }
 }

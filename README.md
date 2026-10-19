@@ -15,6 +15,8 @@ AspNetLearning/
 ├── compose.yaml
 ├── Contracts/
 │   ├── CreateTodoRequest.cs
+│   ├── LoginRequest.cs
+│   ├── LoginResponse.cs
 │   ├── RegisterRequest.cs
 │   └── UpdateTodoRequest.cs
 ├── Controllers/
@@ -27,6 +29,7 @@ AspNetLearning/
 │   └── HelloEndpoints.cs
 ├── frontend/
 │   ├── src/
+│   │   ├── components/LoginForm.vue
 │   │   ├── components/RegisterForm.vue
 │   │   ├── components/TodoListItem.vue
 │   │   ├── services/apiClient.ts
@@ -43,6 +46,7 @@ AspNetLearning/
 │   ├── TodoItem.cs
 │   └── User.cs
 ├── Services/
+│   ├── TokenService.cs
 │   ├── TodoService.cs
 │   └── UserService.cs
 ├── docs/
@@ -55,6 +59,7 @@ AspNetLearning/
 │   ├── 07-postgresql-ef-core.md
 │   ├── 08-vue-typescript-frontend.md
 │   ├── 09-member-registration.md
+│   ├── 10-member-login-jwt.md
 │   └── development-roadmap.md
 ├── postman/
 │   ├── AspNetLearning.postman_collection.json

@@ -13,6 +13,8 @@ services:
       DOTNET_USE_POLLING_FILE_WATCHER: "1"
       # ASP.NET Core 使用雙底線表示設定的階層，本項會對應 ConnectionStrings:DefaultConnection。
       ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=aspnetlearning;Username=aspnetlearning;Password=${POSTGRES_PASSWORD:-aspnetlearning}
+      # 本機學習用 JWT 金鑰；正式部署必須以環境變數提供不同的強隨機金鑰。
+      Jwt__Key: ${JWT_KEY:-aspnetlearning-local-development-jwt-key-change-me}
     depends_on:
       db:
         # 等 PostgreSQL 通過健康檢查後才啟動網站，避免應用程式連線過早。

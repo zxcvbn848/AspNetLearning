@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // ref 建立響應式資料；資料改變時 Vue 會自動更新畫面。
 import { nextTick, onMounted, ref } from 'vue'
+import LoginForm from './components/LoginForm.vue'
 import RegisterForm from './components/RegisterForm.vue'
 import TodoListItem from './components/TodoListItem.vue'
 import { createTodoItem, deleteTodoItem, getTodoItems, updateTodoItem } from './services/todoApi'
@@ -160,6 +161,7 @@ onMounted(loadTodos)
     </header>
 
     <RegisterForm />
+    <LoginForm />
 
     <!-- prevent 阻止瀏覽器送出表單後重新整理整頁。 -->
     <form class="create-form api-section" @submit.prevent="createTodo">
