@@ -49,7 +49,21 @@ ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=aspnetlearning;
 builder.Configuration.GetConnectionString("DefaultConnection")
 ```
 
-本機預設密碼只供學習環境使用，資料庫也沒有開放主機連接埠。正式環境必須透過部署平台的 Secret 設定真正密碼。
+本機預設密碼只供學習環境使用，資料庫連接埠只綁定 Mac 的 `127.0.0.1`，不會開放給區域網路。正式環境必須透過部署平台的 Secret 設定真正密碼。
+
+## 使用 DataGrip 連線
+
+Compose 將 PostgreSQL 綁定在 Mac 本機的 `9181`，而且只接受這台電腦的連線：
+
+```text
+Host: localhost
+Port: 9181
+Database: aspnetlearning
+User: aspnetlearning
+Password: aspnetlearning
+```
+
+JDBC URL 是 `jdbc:postgresql://localhost:9181/aspnetlearning`。DataGrip 的 SSL 設為 Disable，即可查看 `todo_items` 與 `__EFMigrationsHistory`。
 
 ## Entity Framework Core 套件
 

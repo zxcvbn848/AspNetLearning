@@ -21,6 +21,9 @@ services:
   db:
     # 使用 PostgreSQL 18 的輕量 Alpine Linux 映像。
     image: postgres:18-alpine
+    ports:
+      # 只開放給這台 Mac，讓 DataGrip 可連線且不暴露給區域網路。
+      - "127.0.0.1:9181:5432"
     environment:
       POSTGRES_DB: aspnetlearning
       POSTGRES_USER: aspnetlearning
