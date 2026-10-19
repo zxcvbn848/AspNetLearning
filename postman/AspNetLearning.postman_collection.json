@@ -182,7 +182,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"Learning123!\"\n}",
+          "raw": "{\n  \"email\": \"{{registerEmail}}\",\n  \"password\": \"Learning123!\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -203,6 +203,15 @@
       },
       "event": [
         {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('registerEmail', pm.variables.replaceIn('{{$randomEmail}}'));"
+            ]
+          }
+        },
+        {
           "listen": "test",
           "script": {
             "type": "text/javascript",
@@ -216,6 +225,65 @@
               "    pm.expect(response).not.to.have.property('password');",
               "    pm.expect(response).not.to.have.property('passwordHash');",
               "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "第十課：會員登入",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{registerEmail}}\",\n  \"password\": \"Learning123!\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "description": "使用第九課剛建立的會員登入，預期回傳 HTTP 200 與 JWT，並自動保存到 accessToken Collection Variable。"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('登入成功回傳 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const response = pm.response.json();",
+              "pm.test('回傳格式正確的 JWT', function () {",
+              "    pm.expect(response.tokenType).to.eql('Bearer');",
+              "    pm.expect(response.accessToken.split('.')).to.have.lengthOf(3);",
+              "});",
+              "pm.collectionVariables.set('accessToken', response.accessToken);"
             ]
           }
         }
@@ -241,6 +309,18 @@
       "value": "2",
       "type": "string",
       "description": "第四課更新與刪除 API 使用的待辦事項 Id。"
+    },
+    {
+      "key": "registerEmail",
+      "value": "",
+      "type": "string",
+      "description": "第九課 Pre-request Script 自動產生並供登入使用的 Email。"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string",
+      "description": "第十課登入成功後由 Test Script 自動保存的 JWT。"
     }
   ]
 }
