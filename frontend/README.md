@@ -16,6 +16,8 @@ frontend/
 │   ├── App.vue
 │   ├── main.ts
 │   └── style.css
+├── public/
+│   └── favicon.svg
 ├── index.html
 ├── package.json
 ├── tsconfig.json

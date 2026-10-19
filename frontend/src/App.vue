@@ -114,8 +114,8 @@ onMounted(loadTodos)
   <main class="todo-app">
     <header class="page-header">
       <p class="eyebrow">Vue 3 × TypeScript × ASP.NET Core</p>
-      <h1>我的待辦清單</h1>
-      <p class="subtitle">Vue 前端透過 Todo API 讀寫 PostgreSQL。</p>
+      <h1>API 整合平台</h1>
+      <p class="subtitle">集中操作與驗證 AspNetLearning 專案的所有 API。</p>
     </header>
 
     <!-- prevent 阻止瀏覽器送出表單後重新整理整頁。 -->
