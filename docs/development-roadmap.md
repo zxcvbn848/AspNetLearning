@@ -25,6 +25,10 @@
 
 - [ ] 建立可瀏覽的 API 文件，涵蓋各端點的請求與回應格式、狀態碼、JWT 授權、Refresh Token Cookie，以及操作範例。
 
+## 待辦：WebSocket 即時通訊
+
+- [ ] 學習 WebSocket 的持續連線與即時推送，評估以 ASP.NET Core SignalR 建立簡單事件，再由 Vue 畫面接收；包含連線、斷線重連與會員授權的示範。
+
 ## 建議學習順序
 
 ```text
