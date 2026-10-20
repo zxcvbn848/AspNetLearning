@@ -1,5 +1,5 @@
 import type { LoginResponse, UserResponse } from '../types/user'
-import { request } from './apiClient'
+import { request, waitForRefresh } from './apiClient'
 
 /** 呼叫 POST /auth/register 建立會員。 */
 export async function registerUser(email: string, password: string): Promise<UserResponse> {
@@ -30,4 +30,10 @@ export async function getCurrentUser(accessToken: string): Promise<UserResponse>
   })
 
   return response.json() as Promise<UserResponse>
+}
+
+/** 撤銷目前的 Refresh Token，並請瀏覽器刪除 HttpOnly Cookie。 */
+export async function logoutUser(): Promise<void> {
+  await waitForRefresh()
+  await request('/auth/logout', { method: 'POST' })
 }
