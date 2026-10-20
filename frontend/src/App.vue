@@ -44,8 +44,6 @@ const editingTodo = ref<TodoItem | null>(null)
 const editTitle = ref('')
 const editError = ref('')
 const isEditing = ref(false)
-const authVersion = ref(0)
-const loginVersion = ref(0)
 const hasAccessToken = ref(Boolean(window.sessionStorage.getItem('accessToken')))
 // Vite 正式建置時 DEV 是 false，因此不會顯示刻意產生錯誤的學習區塊。
 const isDevelopment = import.meta.env.DEV
@@ -73,7 +71,8 @@ function selectPage(page: DashboardPage): void {
 
 /** 從 ASP.NET Core API 重新取得所有 Todo。 */
 async function loadTodos(): Promise<void> {
-  if (!window.sessionStorage.getItem('accessToken')) {
+  const accessToken = window.sessionStorage.getItem('accessToken')
+  if (!accessToken) {
     todos.value = []
     hasAccessToken.value = false
     showMessage('登入後即可管理自己的待辦事項。')
@@ -81,10 +80,14 @@ async function loadTodos(): Promise<void> {
   }
 
   try {
-    todos.value = await getTodoItems()
+    const items = await getTodoItems()
+    // 回應抵達前若已登出或換帳號，就捨棄過期資料。
+    if (window.sessionStorage.getItem('accessToken') !== accessToken) return
+    todos.value = items
     hasAccessToken.value = true
     isConnected.value = true
   } catch (error) {
+    if (window.sessionStorage.getItem('accessToken') !== accessToken) return
     showError(error)
     isConnected.value = false
   }
@@ -93,7 +96,6 @@ async function loadTodos(): Promise<void> {
 /** 登入成功後重新載入會員區塊與該會員的 Todo。 */
 async function handleLoggedIn(): Promise<void> {
   hasAccessToken.value = true
-  authVersion.value++
   showMessage('')
   await loadTodos()
 }
@@ -106,8 +108,6 @@ function handleLoggedOut(message = '已登出。', success = true): void {
   todos.value = []
   newTitle.value = ''
   editDialog.value?.close()
-  authVersion.value++
-  loginVersion.value++
   activePage.value = 'member'
   activeAuthForm.value = 'login'
   showMessage(message, success)
@@ -243,7 +243,7 @@ function showError(error: unknown): void {
 // 元件掛載後監聽授權失效事件，並立即載入 PostgreSQL 中的 Todo。
 onMounted(() => {
   window.addEventListener(authUnauthorizedEvent, handleUnauthorized)
-  void loadTodos()
+  if (hasAccessToken.value) void loadTodos()
 })
 
 // 元件移除前解除全域事件，避免重複註冊造成同一事件執行多次。
@@ -290,6 +290,9 @@ onBeforeUnmount(() => {
       </nav>
 
       <div class="dashboard-content">
+        <p v-if="activePage !== 'todos' && message" class="message" :class="{ success: isSuccess }" role="status">
+          {{ message }}
+        </p>
         <!-- v-if 只建立目前選取的功能頁，避免所有表單同時拉長畫面。 -->
         <section v-if="activePage === 'member'" aria-labelledby="member-page-heading">
           <div class="content-heading">
@@ -319,14 +322,13 @@ onBeforeUnmount(() => {
             <!-- v-if 只建立目前選擇的表單，切換時會清除尚未送出的輸入內容。 -->
             <LoginForm
               v-if="activeAuthForm === 'login'"
-              :key="loginVersion"
               @logged-in="handleLoggedIn"
             />
             <RegisterForm v-else />
           </template>
 
           <!-- 登入後只顯示會員資料，登出按鈕位於左側導覽列。 -->
-          <CurrentUserPanel v-else :key="authVersion" />
+          <CurrentUserPanel v-else />
         </section>
 
         <section v-else-if="activePage === 'todos'" aria-labelledby="todo-page-heading">

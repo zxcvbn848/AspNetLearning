@@ -35,9 +35,10 @@ export async function request(url: string, options: RequestInit = {}): Promise<R
     }
 
     const validationMessage = Object.values(body.errors ?? {}).flat()[0]
-    const isProtectedRequest = new Headers(options.headers).has('Authorization')
+    const authorization = new Headers(options.headers).get('Authorization')
 
-    if (response.status === 401 && isProtectedRequest) {
+    // 舊請求的 401 不應清除使用者剛換成的新帳號。
+    if (response.status === 401 && authorization === `Bearer ${window.sessionStorage.getItem('accessToken')}`) {
       window.dispatchEvent(new Event(authUnauthorizedEvent))
     }
 
