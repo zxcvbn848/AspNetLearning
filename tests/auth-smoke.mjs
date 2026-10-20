@@ -37,6 +37,8 @@ try {
   assert.equal(loginA.status, 200)
   assert.equal(loginB.status, 200)
   assert.ok(loginA.cookie)
+  const minutesUntilExpiry = (Date.parse(loginA.body.expiresAtUtc) - Date.now()) / 60_000
+  assert.ok(minutesUntilExpiry > 14 && minutesUntilExpiry <= 15, '新簽發的 JWT 應在約 15 分鐘後到期')
 
   const refreshed = await send('/auth/refresh', { method: 'POST', cookie: loginA.cookie })
   assert.equal(refreshed.status, 200)

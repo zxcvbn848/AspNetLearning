@@ -1,6 +1,6 @@
 # 第十八課：Refresh Token 與工作階段
 
-登入現在會同時產生兩種 Token。`TokenService` 簽發有效 60 分鐘的 JWT Access Token，前端保存在目前分頁的 `sessionStorage`，並放入受保護 API 的 `Authorization: Bearer` Header。`RefreshTokenService` 另外產生 32 bytes 的隨機 Refresh Token，透過 `HttpOnly`、`SameSite=Strict`、`Path=/auth` Cookie 交給瀏覽器；正式環境的 Cookie 另設 `Secure`，只透過 HTTPS 傳送。JavaScript 讀不到這枚 Cookie。
+登入現在會同時產生兩種 Token。`TokenService` 簽發有效 15 分鐘的 JWT Access Token，前端保存在目前分頁的 `sessionStorage`，並放入受保護 API 的 `Authorization: Bearer` Header。`RefreshTokenService` 另外產生 32 bytes 的隨機 Refresh Token，透過 `HttpOnly`、`SameSite=Strict`、`Path=/auth` Cookie 交給瀏覽器；正式環境的 Cookie 另設 `Secure`，只透過 HTTPS 傳送。JavaScript 讀不到這枚 Cookie。
 
 資料庫的 `refresh_tokens` 資料表只保存 Refresh Token 的 SHA-256 雜湊、會員編號、到期時間與撤銷時間。即使讀到資料庫，也不能直接拿雜湊當 Token 使用。每次登入建立一個 `FamilyId`，用來區分不同裝置或瀏覽器的工作階段。
 
@@ -29,4 +29,4 @@ POST /auth/logout
 
 已啟動 Docker Compose 時，可用 `node tests/auth-smoke.mjs` 重跑登入、輪替、重放、跨會員隔離及登出的整合測試；腳本會刪除自己建立的測試帳號。
 
-現有 JWT 是無狀態的：登出撤銷的是 Refresh Token，已簽發的 Access Token 在原定 60 分鐘到期前仍有效。正式上線若需要「登出立刻撤銷所有 JWT」，要另加伺服器端撤銷檢查；正式部署也必須使用 HTTPS、私密 JWT 金鑰及安全的資料庫密碼。
+現有 JWT 是無狀態的：登出撤銷的是 Refresh Token，已簽發的 Access Token 在各自原定到期前仍有效。更新設定後新簽發的 Token 有效 15 分鐘，舊 Token 不會被縮短。正式上線若需要「登出立刻撤銷所有 JWT」，要另加伺服器端撤銷檢查；正式部署也必須使用 HTTPS、私密 JWT 金鑰及安全的資料庫密碼。

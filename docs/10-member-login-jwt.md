@@ -1,6 +1,6 @@
 # 第十課：會員登入與 JWT
 
-這一階段新增 `POST /auth/login`。會員輸入 Email 與密碼後，ASP.NET Core 會驗證密碼雜湊，成功時簽發一枚有效 60 分鐘的 JWT Access Token。
+這一階段新增 `POST /auth/login`。會員輸入 Email 與密碼後，ASP.NET Core 會驗證密碼雜湊，成功時簽發一枚有效 15 分鐘的 JWT Access Token。
 
 ## 登入流程
 
