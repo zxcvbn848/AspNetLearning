@@ -34,7 +34,7 @@ public sealed class AuthController : ControllerBase
 
         if (user is null)
         {
-            return Conflict(new { message = "此 Email 已經註冊。" });
+            return Problem(statusCode: StatusCodes.Status409Conflict, detail: "此 Email 已經註冊。");
         }
 
         return StatusCode(StatusCodes.Status201Created, UserResponse.FromUser(user));
@@ -52,7 +52,7 @@ public sealed class AuthController : ControllerBase
         if (user is null)
         {
             // 不分辨帳號或密碼錯誤，避免外部得知某個 Email 是否存在。
-            return Unauthorized(new { message = "Email 或密碼不正確。" });
+            return Problem(statusCode: StatusCodes.Status401Unauthorized, detail: "Email 或密碼不正確。");
         }
 
         return Ok(_tokenService.CreateToken(user));
@@ -69,14 +69,14 @@ public sealed class AuthController : ControllerBase
         // 從已通過 JwtBearer 驗證的 ClaimsPrincipal 讀取標準 sub Claim。
         if (!User.TryGetUserId(out int userId))
         {
-            return Unauthorized(new { message = "Token 缺少有效的會員 Id。" });
+            return Problem(statusCode: StatusCodes.Status401Unauthorized, detail: "Token 缺少有效的會員 Id。");
         }
 
         User? user = await _userService.GetByIdAsync(userId);
 
         if (user is null)
         {
-            return Unauthorized(new { message = "Token 對應的會員不存在。" });
+            return Problem(statusCode: StatusCodes.Status401Unauthorized, detail: "Token 對應的會員不存在。");
         }
 
         return Ok(UserResponse.FromUser(user));

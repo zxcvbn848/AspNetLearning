@@ -46,9 +46,9 @@ export async function request(url: string, options: RequestInit = {}): Promise<R
       ? '登入已失效，請重新登入。'
       : `請求失敗（HTTP ${response.status}）`
 
-    // JWT Middleware 產生的 Problem Details title 是 Unauthorized；401 優先使用既有中文提示。
+    // JWT Middleware 的 401 可能只有英文 title；Controller 的中文 detail 則優先顯示。
     const errorMessage = response.status === 401
-      ? body.message ?? validationMessage ?? fallbackMessage
+      ? body.detail ?? body.message ?? validationMessage ?? fallbackMessage
       : body.message ?? validationMessage ?? body.detail ?? body.title ?? fallbackMessage
 
     throw new ApiError(errorMessage, response.status, body.traceId)

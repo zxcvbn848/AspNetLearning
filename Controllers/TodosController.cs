@@ -53,7 +53,7 @@ public sealed class TodosController : ControllerBase
     {
         if (!User.TryGetUserId(out int userId))
         {
-            return Unauthorized(new { message = "Token 缺少有效的會員 Id。" });
+            return Problem(statusCode: StatusCodes.Status401Unauthorized, detail: "Token 缺少有效的會員 Id。");
         }
 
         // await 等待資料庫查詢完成時，不會阻塞處理其他請求的 Thread。
@@ -74,7 +74,7 @@ public sealed class TodosController : ControllerBase
     {
         if (!User.TryGetUserId(out int userId))
         {
-            return Unauthorized(new { message = "Token 缺少有效的會員 Id。" });
+            return Problem(statusCode: StatusCodes.Status401Unauthorized, detail: "Token 缺少有效的會員 Id。");
         }
 
         // Controller 將已驗證的輸入交給 Service，由 Service 建立並保存 TodoItem。
@@ -96,7 +96,7 @@ public sealed class TodosController : ControllerBase
     {
         if (!User.TryGetUserId(out int userId))
         {
-            return Unauthorized(new { message = "Token 缺少有效的會員 Id。" });
+            return Problem(statusCode: StatusCodes.Status401Unauthorized, detail: "Token 缺少有效的會員 Id。");
         }
 
         // Service 尋找並更新資料；找不到時會回傳 null。
@@ -106,7 +106,7 @@ public sealed class TodosController : ControllerBase
         if (todoItem is null)
         {
             // NotFound 會建立 HTTP 404 回應。
-            return NotFound(new { message = $"找不到 Id 為 {id} 的待辦事項。" });
+            return Problem(statusCode: StatusCodes.Status404NotFound, detail: $"找不到 Id 為 {id} 的待辦事項。");
         }
 
         // Ok 會建立 HTTP 200 回應，並回傳更新後的資料。
@@ -124,7 +124,7 @@ public sealed class TodosController : ControllerBase
     {
         if (!User.TryGetUserId(out int userId))
         {
-            return Unauthorized(new { message = "Token 缺少有效的會員 Id。" });
+            return Problem(statusCode: StatusCodes.Status401Unauthorized, detail: "Token 缺少有效的會員 Id。");
         }
 
         // Service 刪除成功會回傳 true，找不到資料則回傳 false。
@@ -132,7 +132,7 @@ public sealed class TodosController : ControllerBase
 
         if (!isDeleted)
         {
-            return NotFound(new { message = $"找不到 Id 為 {id} 的待辦事項。" });
+            return Problem(statusCode: StatusCodes.Status404NotFound, detail: $"找不到 Id 為 {id} 的待辦事項。");
         }
 
         // NoContent 會建立沒有 Response Body 的 HTTP 204 回應。
