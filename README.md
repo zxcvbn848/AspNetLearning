@@ -65,6 +65,7 @@ AspNetLearning/
 │   ├── 10-member-login-jwt.md
 │   ├── 11-current-user-authorization.md
 │   ├── 12-user-owned-todos.md
+│   ├── 13-logout-auth-state.md
 │   └── development-roadmap.md
 ├── postman/
 │   ├── AspNetLearning.postman_collection.json

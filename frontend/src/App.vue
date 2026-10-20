@@ -1,10 +1,11 @@
 <script setup lang="ts">
 // ref 建立響應式資料；資料改變時 Vue 會自動更新畫面。
-import { nextTick, onMounted, ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import CurrentUserPanel from './components/CurrentUserPanel.vue'
 import LoginForm from './components/LoginForm.vue'
 import RegisterForm from './components/RegisterForm.vue'
 import TodoListItem from './components/TodoListItem.vue'
+import { authUnauthorizedEvent } from './services/apiClient'
 import { createTodoItem, deleteTodoItem, getTodoItems, updateTodoItem } from './services/todoApi'
 import type { TodoItem } from './types/todo'
 
@@ -20,6 +21,7 @@ const editTitle = ref('')
 const editError = ref('')
 const isEditing = ref(false)
 const authVersion = ref(0)
+const loginVersion = ref(0)
 const hasAccessToken = ref(Boolean(window.sessionStorage.getItem('accessToken')))
 
 /** 從 ASP.NET Core API 重新取得所有 Todo。 */
@@ -36,11 +38,6 @@ async function loadTodos(): Promise<void> {
     hasAccessToken.value = true
     isConnected.value = true
   } catch (error) {
-    if (error instanceof Error && error.message.includes('HTTP 401')) {
-      window.sessionStorage.removeItem('accessToken')
-      hasAccessToken.value = false
-    }
-
     showError(error)
     isConnected.value = false
   }
@@ -50,7 +47,30 @@ async function loadTodos(): Promise<void> {
 async function handleLoggedIn(): Promise<void> {
   hasAccessToken.value = true
   authVersion.value++
+  showMessage('')
   await loadTodos()
+}
+
+/** 清除目前分頁的登入資料，並讓會員與 Todo 畫面回到未登入狀態。 */
+function handleLoggedOut(message = '已登出。', success = true): void {
+  window.sessionStorage.removeItem('accessToken')
+  hasAccessToken.value = false
+  isConnected.value = false
+  todos.value = []
+  newTitle.value = ''
+  editDialog.value?.close()
+  authVersion.value++
+  loginVersion.value++
+  showMessage(message, success)
+}
+
+/** 受保護 API 回傳 401 時，使用與手動登出相同的清理流程。 */
+function handleUnauthorized(): void {
+  if (!hasAccessToken.value) {
+    return
+  }
+
+  handleLoggedOut('登入已失效，請重新登入。', false)
 }
 
 /** 呼叫 POST /todos 建立待辦事項。 */
@@ -171,8 +191,16 @@ function showError(error: unknown): void {
   showMessage(error instanceof Error ? error.message : '發生未預期的錯誤。')
 }
 
-// 元件掛載到瀏覽器後，立即載入 PostgreSQL 中的 Todo。
-onMounted(loadTodos)
+// 元件掛載後監聽授權失效事件，並立即載入 PostgreSQL 中的 Todo。
+onMounted(() => {
+  window.addEventListener(authUnauthorizedEvent, handleUnauthorized)
+  void loadTodos()
+})
+
+// 元件移除前解除全域事件，避免重複註冊造成同一事件執行多次。
+onBeforeUnmount(() => {
+  window.removeEventListener(authUnauthorizedEvent, handleUnauthorized)
+})
 </script>
 
 <template>
@@ -181,11 +209,14 @@ onMounted(loadTodos)
       <p class="eyebrow">Vue 3 × TypeScript × ASP.NET Core</p>
       <h1>API 整合平台</h1>
       <p class="subtitle">集中操作與驗證 AspNetLearning 專案的所有 API。</p>
+      <button v-if="hasAccessToken" type="button" class="logout-button" @click="handleLoggedOut()">
+        登出
+      </button>
     </header>
 
     <RegisterForm />
     <!-- key 改變時會重新建立元件，使登入成功後立即重新呼叫 GET /auth/me。 -->
-    <LoginForm @logged-in="handleLoggedIn" />
+    <LoginForm :key="loginVersion" @logged-in="handleLoggedIn" />
     <CurrentUserPanel :key="authVersion" />
 
     <!-- prevent 阻止瀏覽器送出表單後重新整理整頁。 -->

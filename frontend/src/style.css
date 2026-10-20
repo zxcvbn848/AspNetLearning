@@ -48,6 +48,14 @@ button:disabled { cursor: wait; opacity: 0.6; }
 
 .page-header { margin-bottom: 32px; }
 
+.logout-button {
+  margin-top: 18px;
+  padding: 9px 14px;
+  color: var(--danger);
+  background: #fff0f3;
+  font-weight: 700;
+}
+
 .eyebrow {
   margin: 0 0 8px;
   color: var(--primary);
