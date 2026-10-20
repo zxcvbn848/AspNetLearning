@@ -1,6 +1,9 @@
 // 匯入 AppDbContext 所在的命名空間。
 using AspNetLearning.Data;
 
+// 匯入讀取 JWT 會員 Id 的 Extension Method。
+using AspNetLearning.Extensions;
+
 // 匯入問候 API 所在的命名空間，讓這個檔案可以使用 MapHelloEndpoints。
 using AspNetLearning.Endpoints;
 
@@ -52,6 +55,31 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            // JWT 簽章與有效期限通過後，再確認會員仍存在，避免已刪除帳號繼續使用舊 Token。
+            OnTokenValidated = async context =>
+            {
+                if (context.Principal is null ||
+                    !context.Principal.TryGetUserId(out int userId))
+                {
+                    context.Fail("Token 缺少有效的會員 Id。");
+                    return;
+                }
+
+                AppDbContext dbContext = context.HttpContext.RequestServices
+                    .GetRequiredService<AppDbContext>();
+
+                // shortcut: 每個受保護請求查詢一次 users，流量增加時再加入快取或 Security Stamp。
+                bool userExists = await dbContext.Users.AnyAsync(user => user.Id == userId);
+
+                if (!userExists)
+                {
+                    context.Fail("Token 所屬會員不存在。");
+                }
+            }
         };
     });
 

@@ -20,16 +20,37 @@ const editTitle = ref('')
 const editError = ref('')
 const isEditing = ref(false)
 const authVersion = ref(0)
+const hasAccessToken = ref(Boolean(window.sessionStorage.getItem('accessToken')))
 
 /** 從 ASP.NET Core API 重新取得所有 Todo。 */
 async function loadTodos(): Promise<void> {
+  if (!window.sessionStorage.getItem('accessToken')) {
+    todos.value = []
+    hasAccessToken.value = false
+    showMessage('登入後即可管理自己的待辦事項。')
+    return
+  }
+
   try {
     todos.value = await getTodoItems()
+    hasAccessToken.value = true
     isConnected.value = true
   } catch (error) {
+    if (error instanceof Error && error.message.includes('HTTP 401')) {
+      window.sessionStorage.removeItem('accessToken')
+      hasAccessToken.value = false
+    }
+
     showError(error)
     isConnected.value = false
   }
+}
+
+/** 登入成功後重新載入會員區塊與該會員的 Todo。 */
+async function handleLoggedIn(): Promise<void> {
+  hasAccessToken.value = true
+  authVersion.value++
+  await loadTodos()
 }
 
 /** 呼叫 POST /todos 建立待辦事項。 */
@@ -164,7 +185,7 @@ onMounted(loadTodos)
 
     <RegisterForm />
     <!-- key 改變時會重新建立元件，使登入成功後立即重新呼叫 GET /auth/me。 -->
-    <LoginForm @logged-in="authVersion++" />
+    <LoginForm @logged-in="handleLoggedIn" />
     <CurrentUserPanel :key="authVersion" />
 
     <!-- prevent 阻止瀏覽器送出表單後重新整理整頁。 -->
@@ -179,9 +200,10 @@ onMounted(loadTodos)
           maxlength="100"
           placeholder="例如：閱讀 Vue 文件"
           autocomplete="off"
+          :disabled="!hasAccessToken"
           required
         >
-        <button type="submit" :disabled="isCreating">
+        <button type="submit" :disabled="!hasAccessToken || isCreating">
           {{ isCreating ? '新增中…' : '新增' }}
         </button>
       </div>
@@ -245,8 +267,8 @@ onMounted(loadTodos)
   </dialog>
 
   <footer>
-    <span class="status-dot" :class="isConnected ? 'connected' : 'disconnected'">
-      {{ isConnected ? 'API 與 PostgreSQL 連線正常' : '無法連線 API' }}
+    <span class="status-dot" :class="{ connected: isConnected, pending: !hasAccessToken }">
+      {{ !hasAccessToken ? '登入後載入 Todo API' : isConnected ? 'API 與 PostgreSQL 連線正常' : '無法連線 API' }}
     </span>
   </footer>
 </template>

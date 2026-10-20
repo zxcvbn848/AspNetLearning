@@ -27,6 +27,8 @@ AspNetLearning/
 │   └── Migrations/
 ├── Endpoints/
 │   └── HelloEndpoints.cs
+├── Extensions/
+│   └── ClaimsPrincipalExtensions.cs
 ├── frontend/
 │   ├── src/
 │   │   ├── components/CurrentUserPanel.vue
@@ -62,6 +64,7 @@ AspNetLearning/
 │   ├── 09-member-registration.md
 │   ├── 10-member-login-jwt.md
 │   ├── 11-current-user-authorization.md
+│   ├── 12-user-owned-todos.md
 │   └── development-roadmap.md
 ├── postman/
 │   ├── AspNetLearning.postman_collection.json

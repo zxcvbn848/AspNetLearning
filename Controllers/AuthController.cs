@@ -1,10 +1,9 @@
 using AspNetLearning.Contracts;
+using AspNetLearning.Extensions;
 using AspNetLearning.Models;
 using AspNetLearning.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 
 namespace AspNetLearning.Controllers;
 
@@ -67,10 +66,8 @@ public sealed class AuthController : ControllerBase
     [HttpGet("me")]
     public async Task<ActionResult<UserResponse>> GetCurrentUser()
     {
-        // FindFirstValue 只讀取已通過 JwtBearer 驗證的 Claim。
-        string? subject = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-
-        if (!int.TryParse(subject, out int userId))
+        // 從已通過 JwtBearer 驗證的 ClaimsPrincipal 讀取標準 sub Claim。
+        if (!User.TryGetUserId(out int userId))
         {
             return Unauthorized(new { message = "Token 缺少有效的會員 Id。" });
         }
