@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Identity;
 
 // 匯入 JWT 驗證、簽章金鑰與文字編碼相關類別。
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -29,6 +30,28 @@ var builder = WebApplication.CreateBuilder(args);
 // 將 Controller 相關服務註冊到 ASP.NET Core 的 Dependency Injection 容器。
 // AddControllers 讓應用程式能辨識繼承 ControllerBase 並標有路由 Attribute 的類別。
 builder.Services.AddControllers();
+
+// 註冊 RFC 9457 Problem Details，統一驗證錯誤、404 與未預期例外的 JSON 格式。
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = context =>
+    {
+        // Trace Id 可以將 Client 收到的錯誤與伺服器 Log 中的同一次 Request 對應起來。
+        context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
+
+        if (context.ProblemDetails.Status == StatusCodes.Status500InternalServerError)
+        {
+            context.ProblemDetails.Title = "伺服器發生未預期錯誤。";
+
+            // 開發環境顯示例外訊息方便學習；正式環境不回傳內部細節。
+            if (builder.Environment.IsDevelopment() &&
+                context.HttpContext.Features.Get<IExceptionHandlerFeature>() is { Error: Exception exception })
+            {
+                context.ProblemDetails.Detail = exception.Message;
+            }
+        }
+    };
+});
 
 // JWT 簽章金鑰至少需要 32 bytes，避免使用過短金鑰降低 HMAC-SHA256 安全性。
 string jwtKey = builder.Configuration["Jwt:Key"]
@@ -115,12 +138,27 @@ using (IServiceScope scope = app.Services.CreateScope())
     dbContext.Database.Migrate();
 }
 
+// 捕捉後續 Middleware 與 Endpoint 沒有處理的例外，並透過 Problem Details 回傳 HTTP 500。
+app.UseExceptionHandler();
+
+// 將原本沒有 Response Body 的 404 等狀態碼也轉成 Problem Details JSON。
+app.UseStatusCodePages();
+
 // 註冊 HTTP GET 路由。
 // "/" 代表網站根路徑，() => "Hello World!" 是收到請求後執行的 Lambda 運算式。
 app.MapGet("/", () => "Hello World!");
 
 // 載入第一階段的問候 API 路由。
 app.MapHelloEndpoints();
+
+if (app.Environment.IsDevelopment())
+{
+    // 只在開發環境提供測試端點，用來觀察全域例外處理與 Trace Id。
+    app.MapGet("/debug/error", () =>
+    {
+        throw new InvalidOperationException("這是開發環境的預期測試例外。");
+    });
+}
 
 // 驗證 Authorization Header 中的 JWT，再執行端點設定的授權規則。
 app.UseAuthentication();

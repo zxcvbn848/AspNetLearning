@@ -93,6 +93,8 @@ h1 {
 
 .auth-form button { grid-column: 1 / -1; min-height: 44px; margin-top: 4px; color: white; background: var(--primary); font-weight: 700; }
 .auth-status { margin: 16px 0 0; color: var(--muted); }
+.test-error-button { margin-top: 14px; padding: 10px 14px; color: white; background: var(--primary); font-weight: 700; }
+.trace-id { margin-bottom: 0; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.82rem; overflow-wrap: anywhere; }
 .user-details { display: grid; grid-template-columns: auto 1fr; gap: 10px 18px; margin: 16px 0 0; }
 .user-details div { display: contents; }
 .user-details dt { color: var(--muted); font-weight: 700; }

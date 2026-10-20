@@ -2,6 +2,7 @@
 // ref 建立響應式資料；資料改變時 Vue 會自動更新畫面。
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import CurrentUserPanel from './components/CurrentUserPanel.vue'
+import ErrorHandlingPanel from './components/ErrorHandlingPanel.vue'
 import LoginForm from './components/LoginForm.vue'
 import RegisterForm from './components/RegisterForm.vue'
 import TodoListItem from './components/TodoListItem.vue'
@@ -23,6 +24,8 @@ const isEditing = ref(false)
 const authVersion = ref(0)
 const loginVersion = ref(0)
 const hasAccessToken = ref(Boolean(window.sessionStorage.getItem('accessToken')))
+// Vite 正式建置時 DEV 是 false，因此不會顯示刻意產生錯誤的學習區塊。
+const isDevelopment = import.meta.env.DEV
 
 /** 從 ASP.NET Core API 重新取得所有 Todo。 */
 async function loadTodos(): Promise<void> {
@@ -218,6 +221,7 @@ onBeforeUnmount(() => {
     <!-- key 改變時會重新建立元件，使登入成功後立即重新呼叫 GET /auth/me。 -->
     <LoginForm :key="loginVersion" @logged-in="handleLoggedIn" />
     <CurrentUserPanel :key="authVersion" />
+    <ErrorHandlingPanel v-if="isDevelopment" />
 
     <!-- prevent 阻止瀏覽器送出表單後重新整理整頁。 -->
     <form class="create-form api-section" @submit.prevent="createTodo">

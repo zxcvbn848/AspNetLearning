@@ -19,6 +19,11 @@ export default defineConfig({
         target: 'http://app:8080',
         changeOrigin: true,
       },
+      // 將開發環境的全域例外測試端點轉送到 ASP.NET Core。
+      '/debug': {
+        target: 'http://app:8080',
+        changeOrigin: true,
+      },
     },
   },
 })
