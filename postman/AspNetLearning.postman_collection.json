@@ -600,6 +600,51 @@
         }
       ],
       "response": []
+    },
+    {
+      "name": "第十五課：全域例外處理",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/problem+json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/debug/error",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "debug",
+            "error"
+          ]
+        },
+        "description": "只供 Development 環境使用。刻意拋出例外，確認全域 Middleware 回傳 HTTP 500、Problem Details 與 Trace Id。"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"未預期例外回傳 500\", function () {",
+              "    pm.response.to.have.status(500);",
+              "});",
+              "",
+              "const response = pm.response.json();",
+              "pm.test(\"回傳 Problem Details 與 Trace Id\", function () {",
+              "    pm.expect(response.title).to.eql(\"伺服器發生未預期錯誤。\");",
+              "    pm.expect(response.status).to.eql(500);",
+              "    pm.expect(response.traceId).to.be.a(\"string\").and.not.empty;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
     }
   ],
   "variable": [

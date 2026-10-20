@@ -32,6 +32,7 @@ AspNetLearning/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/CurrentUserPanel.vue
+│   │   ├── components/ErrorHandlingPanel.vue
 │   │   ├── components/LoginForm.vue
 │   │   ├── components/RegisterForm.vue
 │   │   ├── components/TodoListItem.vue
@@ -67,6 +68,7 @@ AspNetLearning/
 │   ├── 12-user-owned-todos.md
 │   ├── 13-logout-auth-state.md
 │   ├── 14-request-validation.md
+│   ├── 15-global-error-handling.md
 │   └── development-roadmap.md
 ├── postman/
 │   ├── AspNetLearning.postman_collection.json
