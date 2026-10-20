@@ -10,6 +10,29 @@ import { authUnauthorizedEvent } from './services/apiClient'
 import { createTodoItem, deleteTodoItem, getTodoItems, updateTodoItem } from './services/todoApi'
 import type { TodoItem } from './types/todo'
 
+// 使用字串聯集限制頁面名稱，避免傳入拼錯或不存在的頁面。
+type DashboardPage = 'member' | 'todos' | 'errors' | 'status'
+type AuthForm = 'login' | 'register'
+
+// 導覽項目的資料結構，讓按鈕可以用同一份陣列產生。
+interface NavigationItem {
+  id: DashboardPage
+  label: string
+  description: string
+}
+
+// 導覽設定只負責顯示文字與對應頁面，不包含 API 邏輯。
+const navigationItems: NavigationItem[] = [
+  { id: 'member', label: '會員', description: '註冊、登入與會員資料' },
+  { id: 'todos', label: '待辦事項', description: '管理自己的 Todo' },
+  { id: 'errors', label: '錯誤測試', description: 'Problem Details' },
+  { id: 'status', label: 'API 狀態', description: '連線與登入狀態' },
+]
+
+// ref 保存目前選取的頁面；變更 value 時，Vue 會自動切換畫面。
+const activePage = ref<DashboardPage>('member')
+// 未登入時只顯示一張會員表單，避免登入與註冊表單同時拉長頁面。
+const activeAuthForm = ref<AuthForm>('login')
 const todos = ref<TodoItem[]>([])
 const newTitle = ref('')
 const message = ref('')
@@ -26,6 +49,15 @@ const loginVersion = ref(0)
 const hasAccessToken = ref(Boolean(window.sessionStorage.getItem('accessToken')))
 // Vite 正式建置時 DEV 是 false，因此不會顯示刻意產生錯誤的學習區塊。
 const isDevelopment = import.meta.env.DEV
+
+/** 切換功能頁；進入待辦頁時同步取得最新資料。 */
+function selectPage(page: DashboardPage): void {
+  activePage.value = page
+
+  if (page === 'todos') {
+    void loadTodos()
+  }
+}
 
 /** 從 ASP.NET Core API 重新取得所有 Todo。 */
 async function loadTodos(): Promise<void> {
@@ -64,6 +96,8 @@ function handleLoggedOut(message = '已登出。', success = true): void {
   editDialog.value?.close()
   authVersion.value++
   loginVersion.value++
+  activePage.value = 'member'
+  activeAuthForm.value = 'login'
   showMessage(message, success)
 }
 
@@ -207,67 +241,162 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <main class="todo-app">
+  <main class="dashboard-shell">
     <header class="page-header">
       <p class="eyebrow">Vue 3 × TypeScript × ASP.NET Core</p>
       <h1>API 整合平台</h1>
       <p class="subtitle">集中操作與驗證 AspNetLearning 專案的所有 API。</p>
-      <button v-if="hasAccessToken" type="button" class="logout-button" @click="handleLoggedOut()">
-        登出
-      </button>
     </header>
 
-    <RegisterForm />
-    <!-- key 改變時會重新建立元件，使登入成功後立即重新呼叫 GET /auth/me。 -->
-    <LoginForm :key="loginVersion" @logged-in="handleLoggedIn" />
-    <CurrentUserPanel :key="authVersion" />
-    <ErrorHandlingPanel v-if="isDevelopment" />
-
-    <!-- prevent 阻止瀏覽器送出表單後重新整理整頁。 -->
-    <form class="create-form api-section" @submit.prevent="createTodo">
-      <p class="section-kicker">POST /todos</p>
-      <label for="new-title">新增待辦事項</label>
-      <div class="input-row">
-        <!-- v-model 讓輸入框與 newTitle 保持雙向同步。 -->
-        <input
-          id="new-title"
-          v-model="newTitle"
-          maxlength="100"
-          placeholder="例如：閱讀 Vue 文件"
-          autocomplete="off"
-          :disabled="!hasAccessToken"
-          required
+    <div class="dashboard-layout">
+      <!-- nav 表示這組按鈕是主要功能導覽，方便輔助工具辨識。 -->
+      <nav class="dashboard-nav" aria-label="API 功能導覽">
+        <!-- v-for 依 navigationItems 建立相同結構的導覽按鈕。 -->
+        <button
+          v-for="item in navigationItems"
+          :key="item.id"
+          type="button"
+          class="nav-button"
+          :class="{ active: activePage === item.id }"
+          :aria-current="activePage === item.id ? 'page' : undefined"
+          @click="selectPage(item.id)"
         >
-        <button type="submit" :disabled="!hasAccessToken || isCreating">
-          {{ isCreating ? '新增中…' : '新增' }}
+          <span>{{ item.label }}</span>
+          <small>{{ item.description }}</small>
         </button>
+
+        <button v-if="hasAccessToken" type="button" class="logout-button" @click="handleLoggedOut()">
+          登出
+        </button>
+      </nav>
+
+      <div class="dashboard-content">
+        <!-- v-if 只建立目前選取的功能頁，避免所有表單同時拉長畫面。 -->
+        <section v-if="activePage === 'member'" aria-labelledby="member-page-heading">
+          <div class="content-heading">
+            <p class="eyebrow">Member API</p>
+            <h2 id="member-page-heading">會員</h2>
+            <p>建立帳號、取得 JWT，並讀取目前登入會員。</p>
+          </div>
+
+          <template v-if="!hasAccessToken">
+            <div class="auth-switch" aria-label="會員操作">
+              <button
+                type="button"
+                :class="{ active: activeAuthForm === 'login' }"
+                @click="activeAuthForm = 'login'"
+              >
+                登入
+              </button>
+              <button
+                type="button"
+                :class="{ active: activeAuthForm === 'register' }"
+                @click="activeAuthForm = 'register'"
+              >
+                註冊
+              </button>
+            </div>
+
+            <!-- v-if 只建立目前選擇的表單，切換時會清除尚未送出的輸入內容。 -->
+            <LoginForm
+              v-if="activeAuthForm === 'login'"
+              :key="loginVersion"
+              @logged-in="handleLoggedIn"
+            />
+            <RegisterForm v-else />
+          </template>
+
+          <!-- 登入後只顯示會員資料，登出按鈕位於左側導覽列。 -->
+          <CurrentUserPanel v-else :key="authVersion" />
+        </section>
+
+        <section v-else-if="activePage === 'todos'" aria-labelledby="todo-page-heading">
+          <div class="content-heading">
+            <p class="eyebrow">Todo API</p>
+            <h2 id="todo-page-heading">待辦事項</h2>
+            <p>新增、完成、修改與刪除目前會員的待辦事項。</p>
+          </div>
+
+          <!-- prevent 阻止瀏覽器送出表單後重新整理整頁。 -->
+          <form class="create-form api-section" @submit.prevent="createTodo">
+            <p class="section-kicker">POST /todos</p>
+            <label for="new-title">新增待辦事項</label>
+            <div class="input-row">
+              <!-- v-model 讓輸入框與 newTitle 保持雙向同步。 -->
+              <input
+                id="new-title"
+                v-model="newTitle"
+                maxlength="100"
+                placeholder="例如：閱讀 Vue 文件"
+                autocomplete="off"
+                :disabled="!hasAccessToken"
+                required
+              >
+              <button type="submit" :disabled="!hasAccessToken || isCreating">
+                {{ isCreating ? '新增中…' : '新增' }}
+              </button>
+            </div>
+          </form>
+
+          <p class="message" :class="{ success: isSuccess }" aria-live="polite">
+            {{ message }}
+          </p>
+
+          <section class="todo-section" aria-labelledby="todo-heading">
+            <div class="section-heading">
+              <h2 id="todo-heading">待辦事項</h2>
+              <span class="todo-count">{{ todos.length }} 筆</span>
+            </div>
+
+            <ul v-if="todos.length" class="todo-list">
+              <!-- v-for 根據陣列建立元件；key 讓 Vue 使用 Id 識別每一列。 -->
+              <TodoListItem
+                v-for="todo in todos"
+                :key="todo.id"
+                :todo="todo"
+                @toggle="toggleTodo"
+                @edit="editTodo"
+                @remove="removeTodo"
+              />
+            </ul>
+
+            <p v-else class="empty-state">
+              {{ hasAccessToken ? '目前沒有待辦事項。' : '請先到會員頁登入。' }}
+            </p>
+          </section>
+        </section>
+
+        <!-- 例外測試端點只存在於開發環境；正式建置改顯示說明文字。 -->
+        <ErrorHandlingPanel v-else-if="activePage === 'errors' && isDevelopment" />
+        <section v-else-if="activePage === 'errors'" class="empty-page">
+          <h2>錯誤測試</h2>
+          <p>正式環境不提供刻意產生例外的測試功能。</p>
+        </section>
+
+        <section v-else class="status-page" aria-labelledby="status-page-heading">
+          <div class="content-heading">
+            <p class="eyebrow">Runtime Status</p>
+            <h2 id="status-page-heading">API 狀態</h2>
+            <p>查看目前瀏覽器分頁保存的登入與連線狀態。</p>
+          </div>
+
+          <dl class="status-list">
+            <div>
+              <dt>登入狀態</dt>
+              <dd>{{ hasAccessToken ? '已登入' : '未登入' }}</dd>
+            </div>
+            <div>
+              <dt>Todo API</dt>
+              <dd>{{ !hasAccessToken ? '登入後檢查' : isConnected ? '連線正常' : '無法連線' }}</dd>
+            </div>
+            <div>
+              <dt>前端環境</dt>
+              <dd>{{ isDevelopment ? 'Development' : 'Production' }}</dd>
+            </div>
+          </dl>
+        </section>
       </div>
-    </form>
-
-    <p class="message" :class="{ success: isSuccess }" aria-live="polite">
-      {{ message }}
-    </p>
-
-    <section class="todo-section" aria-labelledby="todo-heading">
-      <div class="section-heading">
-        <h2 id="todo-heading">待辦事項</h2>
-        <span class="todo-count">{{ todos.length }} 筆</span>
-      </div>
-
-      <ul v-if="todos.length" class="todo-list">
-        <!-- v-for 根據陣列建立元件；key 讓 Vue 使用 Id 識別每一列。 -->
-        <TodoListItem
-          v-for="todo in todos"
-          :key="todo.id"
-          :todo="todo"
-          @toggle="toggleTodo"
-          @edit="editTodo"
-          @remove="removeTodo"
-        />
-      </ul>
-
-      <p v-else class="empty-state">目前沒有待辦事項。</p>
-    </section>
+    </div>
   </main>
 
   <!-- dialog 提供鍵盤焦點管理；內容與樣式由 Vue 頁面自行控制。 -->

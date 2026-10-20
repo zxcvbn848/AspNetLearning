@@ -69,6 +69,7 @@ AspNetLearning/
 │   ├── 13-logout-auth-state.md
 │   ├── 14-request-validation.md
 │   ├── 15-global-error-handling.md
+│   ├── 16-dashboard-navigation.md
 │   └── development-roadmap.md
 ├── postman/
 │   ├── AspNetLearning.postman_collection.json
