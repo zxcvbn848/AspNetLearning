@@ -6,6 +6,7 @@ import ErrorHandlingPanel from './components/ErrorHandlingPanel.vue'
 import LoginForm from './components/LoginForm.vue'
 import RegisterForm from './components/RegisterForm.vue'
 import TodoListItem from './components/TodoListItem.vue'
+import { logoutUser } from './services/authApi'
 import { authUnauthorizedEvent } from './services/apiClient'
 import { createTodoItem, deleteTodoItem, getTodoItems, updateTodoItem } from './services/todoApi'
 import type { TodoItem } from './types/todo'
@@ -38,6 +39,7 @@ const newTitle = ref('')
 const message = ref('')
 const isSuccess = ref(false)
 const isCreating = ref(false)
+const isLoggingOut = ref(false)
 const isConnected = ref(false)
 const editDialog = ref<HTMLDialogElement | null>(null)
 const editingTodo = ref<TodoItem | null>(null)
@@ -101,7 +103,7 @@ async function handleLoggedIn(): Promise<void> {
 }
 
 /** 清除目前分頁的登入資料，並讓會員與 Todo 畫面回到未登入狀態。 */
-function handleLoggedOut(message = '已登出。', success = true): void {
+function clearAuthState(message: string, success: boolean): void {
   window.sessionStorage.removeItem('accessToken')
   hasAccessToken.value = false
   isConnected.value = false
@@ -113,13 +115,27 @@ function handleLoggedOut(message = '已登出。', success = true): void {
   showMessage(message, success)
 }
 
+/** 先撤銷伺服器工作階段，成功後才清掉目前畫面的登入資料。 */
+async function handleLoggedOut(): Promise<void> {
+  if (isLoggingOut.value) return
+  isLoggingOut.value = true
+  try {
+    await logoutUser()
+    clearAuthState('已登出。', true)
+  } catch (error) {
+    showError(error)
+  } finally {
+    isLoggingOut.value = false
+  }
+}
+
 /** 受保護 API 回傳 401 時，使用與手動登出相同的清理流程。 */
 function handleUnauthorized(): void {
   if (!hasAccessToken.value) {
     return
   }
 
-  handleLoggedOut('登入已失效，請重新登入。', false)
+  clearAuthState('登入已失效，請重新登入。', false)
 }
 
 /** 呼叫 POST /todos 建立待辦事項。 */
@@ -284,8 +300,8 @@ onBeforeUnmount(() => {
           <small>{{ item.description }}</small>
         </button>
 
-        <button v-if="hasAccessToken" type="button" class="logout-button" @click="handleLoggedOut()">
-          登出
+        <button v-if="hasAccessToken" type="button" class="logout-button" :disabled="isLoggingOut" @click="handleLoggedOut()">
+          {{ isLoggingOut ? '登出中…' : '登出' }}
         </button>
       </nav>
 
