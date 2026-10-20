@@ -36,8 +36,8 @@ button:focus-visible, input:focus-visible {
 
 button:disabled { cursor: wait; opacity: 0.6; }
 
-.todo-app {
-  width: min(100%, 720px);
+.dashboard-shell {
+  width: min(100%, 1120px);
   margin: 0 auto;
   padding: clamp(24px, 5vw, 44px);
   border: 1px solid rgb(255 255 255 / 70%);
@@ -47,6 +47,50 @@ button:disabled { cursor: wait; opacity: 0.6; }
 }
 
 .page-header { margin-bottom: 32px; }
+
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 36px;
+}
+
+.dashboard-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nav-button {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  padding: 13px 14px;
+  color: var(--muted);
+  background: transparent;
+  text-align: left;
+}
+
+.nav-button span { color: var(--text); font-weight: 750; }
+.nav-button small { font-size: 0.75rem; }
+.nav-button:hover { background: #f5f5ff; }
+.nav-button.active { color: var(--primary); background: #f0efff; }
+.nav-button.active span { color: var(--primary); }
+.dashboard-content { min-width: 0; }
+.content-heading { padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+.content-heading h2 { margin-bottom: 8px; font-size: 1.75rem; }
+.content-heading p:last-child { margin-bottom: 0; color: var(--muted); }
+
+.auth-switch {
+  display: inline-flex;
+  gap: 4px;
+  margin-top: 24px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #eef0f5;
+}
+
+.auth-switch button { padding: 8px 18px; color: var(--muted); background: transparent; font-weight: 700; }
+.auth-switch button.active { color: var(--primary); background: var(--surface); box-shadow: 0 2px 8px rgb(37 44 71 / 10%); }
 
 .logout-button {
   margin-top: 18px;
@@ -167,7 +211,7 @@ h1 {
 .empty-state { margin: 28px 0 4px; color: var(--muted); text-align: center; }
 
 footer {
-  width: min(100%, 720px);
+  width: min(100%, 1120px);
   margin: 18px auto 0;
   color: var(--muted);
   font-size: 0.82rem;
@@ -186,6 +230,12 @@ footer {
 
 .status-dot.connected::before { background: var(--success); }
 .status-dot.pending::before { background: var(--muted); }
+.status-list { display: grid; gap: 0; margin: 24px 0 0; }
+.status-list div { display: grid; grid-template-columns: 140px 1fr; gap: 20px; padding: 16px 0; border-bottom: 1px solid var(--border); }
+.status-list dt { color: var(--muted); font-weight: 700; }
+.status-list dd { margin: 0; font-weight: 700; }
+.empty-page { padding: 24px 0; }
+.empty-page p { color: var(--muted); }
 
 .edit-dialog {
   width: min(calc(100% - 32px), 480px);
@@ -219,7 +269,12 @@ footer {
 
 @media (max-width: 560px) {
   body { padding: 20px 12px; }
-  .todo-app { border-radius: 18px; }
+  .dashboard-shell { border-radius: 18px; }
+  .dashboard-layout { grid-template-columns: 1fr; gap: 24px; }
+  .dashboard-nav { flex-direction: row; overflow-x: auto; padding-bottom: 6px; }
+  .nav-button { flex: 0 0 auto; width: auto; white-space: nowrap; }
+  .nav-button small { display: none; }
+  .dashboard-nav .logout-button { flex: 0 0 auto; margin: 0; }
   .input-row { grid-template-columns: 1fr; }
   .input-row button { min-height: 44px; }
   .auth-form { grid-template-columns: 1fr; }
@@ -227,6 +282,7 @@ footer {
   .todo-item { grid-template-columns: auto 1fr; }
   .todo-actions { grid-column: 2; justify-content: flex-end; }
   .edit-form { padding: 22px; }
+  .status-list div { grid-template-columns: 110px 1fr; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
