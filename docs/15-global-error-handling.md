@@ -112,4 +112,4 @@ this.traceId = traceId
 3. 在 Postman 執行「第十五課：全域例外處理」。
 4. 呼叫不存在的路徑，確認 HTTP 404 也使用 Problem Details。
 
-目前只統一未預期例外與空白狀態碼。已知的業務結果仍由 Controller 回傳 400、401、404 或 409。
+第十八課之後，Controller 的已知業務錯誤也使用 `Problem(...)` 回傳 Problem Details；輸入驗證的 HTTP 400 則由 `[ApiController]` 自動產生。

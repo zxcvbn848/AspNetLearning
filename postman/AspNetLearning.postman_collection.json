@@ -386,6 +386,82 @@
       "response": []
     },
     {
+      "name": "第十八課：更新 Access Token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/refresh",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "refresh"
+          ]
+        },
+        "description": "使用登入後 Postman Cookie Jar 保存的 HttpOnly Cookie 取得新的 Access Token；每次呼叫都會輪替 Cookie。"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('回傳 HTTP 200', function () { pm.response.to.have.status(200); });",
+              "const response = pm.response.json();",
+              "pm.test('取得新 JWT', function () { pm.expect(response.accessToken.split('.')).to.have.lengthOf(3); });",
+              "pm.collectionVariables.set('accessToken', response.accessToken);"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "第十八課：登出並撤銷 Refresh Token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/logout",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "logout"
+          ]
+        },
+        "description": "撤銷目前 Cookie 對應的工作階段；之後再呼叫更新端點會回傳 401。既有 JWT 在到期前仍有效。"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('回傳 HTTP 204', function () { pm.response.to.have.status(204); });",
+              "pm.collectionVariables.unset('accessToken');"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
       "name": "第十一課：取得目前會員",
       "request": {
         "method": "GET",
