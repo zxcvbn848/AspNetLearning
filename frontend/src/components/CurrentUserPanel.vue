@@ -21,8 +21,7 @@ async function loadCurrentUser(): Promise<void> {
     user.value = await getCurrentUser(accessToken)
     message.value = ''
   } catch (error) {
-    // 無效或過期 Token 不應繼續留在瀏覽器中。
-    window.sessionStorage.removeItem('accessToken')
+    // apiClient 會通知最上層元件統一清除失效的登入狀態。
     message.value = error instanceof Error ? error.message : '無法取得目前會員。'
   } finally {
     isLoading.value = false
