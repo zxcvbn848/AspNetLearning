@@ -77,19 +77,6 @@ public sealed class TodosController : ControllerBase
             return Unauthorized(new { message = "Token 缺少有效的會員 Id。" });
         }
 
-        // IsNullOrWhiteSpace 會檢查 null、空字串及只含空白的文字。
-        if (string.IsNullOrWhiteSpace(request.Title))
-        {
-            // BadRequest 會建立 HTTP 400 回應。
-            return BadRequest(new { message = "Title 不可為空白。" });
-        }
-
-        // 在送進資料庫前檢查長度，避免 PostgreSQL 拒絕資料後變成 HTTP 500。
-        if (request.Title.Length > 100)
-        {
-            return BadRequest(new { message = "Title 最多只能有 100 個字元。" });
-        }
-
         // Controller 將已驗證的輸入交給 Service，由 Service 建立並保存 TodoItem。
         TodoItem todoItem = await _todoService.CreateAsync(userId, request.Title);
 
@@ -110,16 +97,6 @@ public sealed class TodosController : ControllerBase
         if (!User.TryGetUserId(out int userId))
         {
             return Unauthorized(new { message = "Token 缺少有效的會員 Id。" });
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Title))
-        {
-            return BadRequest(new { message = "Title 不可為空白。" });
-        }
-
-        if (request.Title.Length > 100)
-        {
-            return BadRequest(new { message = "Title 最多只能有 100 個字元。" });
         }
 
         // Service 尋找並更新資料；找不到時會回傳 null。

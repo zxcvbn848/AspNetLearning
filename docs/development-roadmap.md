@@ -15,6 +15,7 @@
 - [x] 在 Postman Collection 加入會員 API 與 Token 變數
 - [x] 補上會員系統的學習文件與測試步驟
 - [x] 建立登出功能，並在 Token 失效時同步清除整個前端登入狀態
+- [x] 使用 Data Annotations 統一驗證 API Request
 
 ## 建議學習順序
 
@@ -30,6 +31,8 @@
 Vue 登入狀態與會員畫面
     ↓
 登出與 401 狀態同步
+    ↓
+Request 自動驗證
 ```
 
 正式開始前會先決定採用 ASP.NET Core Identity，或以較精簡的 JWT 流程教學。兩者不會同時建立，避免重複的會員邏輯。

@@ -11,11 +11,11 @@ public sealed class RegisterRequest
     [Required(ErrorMessage = "Email 為必填欄位。")]
     [EmailAddress(ErrorMessage = "Email 格式不正確。")]
     [MaxLength(254, ErrorMessage = "Email 最多只能有 254 個字元。")]
-    public required string Email { get; init; }
+    public string Email { get; init; } = string.Empty;
 
     /// <summary>會員的原始密碼，只用來產生雜湊，不會寫入資料庫。</summary>
     [Required(ErrorMessage = "密碼為必填欄位。")]
     [MinLength(8, ErrorMessage = "密碼至少需要 8 個字元。")]
     [MaxLength(100, ErrorMessage = "密碼最多只能有 100 個字元。")]
-    public required string Password { get; init; }
+    public string Password { get; init; } = string.Empty;
 }
