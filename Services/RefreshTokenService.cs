@@ -83,11 +83,22 @@ public sealed class RefreshTokenService
     public async Task RevokeAsync(string token)
     {
         if (token.Length > 128) return;
-        Guid? familyId = await _dbContext.RefreshTokens
-            .Where(item => item.TokenHash == Hash(token))
-            .Select(item => (Guid?)item.FamilyId)
-            .SingleOrDefaultAsync();
-        if (familyId is not null) await RevokeFamilyAsync(familyId.Value);
+        string hash = Hash(token);
+        await _dbContext.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+        {
+            await using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            Guid? familyId = await _dbContext.RefreshTokens
+                .Where(item => item.TokenHash == hash)
+                .Select(item => (Guid?)item.FamilyId)
+                .SingleOrDefaultAsync();
+            if (familyId is null) return;
+
+            // 先鎖定目前 Token；若更新同時發生，等待它提交後才能撤銷新 Token。
+            await _dbContext.RefreshTokens.Where(item => item.TokenHash == hash)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.RevokedAtUtc, DateTime.UtcNow));
+            await RevokeFamilyAsync(familyId.Value);
+            await transaction.CommitAsync();
+        });
     }
 
     private Task<int> RevokeFamilyAsync(Guid familyId) => _dbContext.RefreshTokens

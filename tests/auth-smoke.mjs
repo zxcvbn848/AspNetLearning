@@ -45,6 +45,15 @@ try {
   assert.equal((await send('/auth/refresh', { method: 'POST', cookie: loginA.cookie })).status, 401)
   assert.equal((await send('/auth/refresh', { method: 'POST', cookie: refreshed.cookie })).status, 401)
 
+  const concurrentLogin = await send('/auth/login', { method: 'POST', body: { email: emails[0], password } })
+  const concurrent = await Promise.all([
+    send('/auth/refresh', { method: 'POST', cookie: concurrentLogin.cookie }),
+    send('/auth/refresh', { method: 'POST', cookie: concurrentLogin.cookie }),
+  ])
+  assert.deepEqual(concurrent.map((item) => item.status).sort(), [200, 401])
+  const concurrentWinner = concurrent.find((item) => item.status === 200)
+  assert.equal((await send('/auth/refresh', { method: 'POST', cookie: concurrentWinner.cookie })).status, 401)
+
   const todo = await send('/todos', {
     method: 'POST', body: { title: '授權整合測試' }, bearer: loginA.body.accessToken,
   })
@@ -57,6 +66,17 @@ try {
   const freshLogin = await send('/auth/login', { method: 'POST', body: { email: emails[0], password } })
   assert.equal((await send('/auth/logout', { method: 'POST', cookie: freshLogin.cookie })).status, 204)
   assert.equal((await send('/auth/refresh', { method: 'POST', cookie: freshLogin.cookie })).status, 401)
+
+  const racingLogin = await send('/auth/login', { method: 'POST', body: { email: emails[0], password } })
+  const [logout, racingRefresh] = await Promise.all([
+    send('/auth/logout', { method: 'POST', cookie: racingLogin.cookie }),
+    send('/auth/refresh', { method: 'POST', cookie: racingLogin.cookie }),
+  ])
+  assert.equal(logout.status, 204)
+  assert.ok([200, 401].includes(racingRefresh.status))
+  if (racingRefresh.status === 200) {
+    assert.equal((await send('/auth/refresh', { method: 'POST', cookie: racingRefresh.cookie })).status, 401)
+  }
   console.log('PASS: JWT、Refresh 輪替與重放、跨會員隔離、Problem Details、登出撤銷')
 } finally {
   // 測試使用隨機前綴；刪除會員時外鍵會一併清掉 Todo 與 Refresh Token。

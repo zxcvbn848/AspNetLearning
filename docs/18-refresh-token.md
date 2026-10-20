@@ -27,4 +27,6 @@ POST /auth/logout
 
 若單獨用 `curl`，必須使用 Cookie Jar；只複製 JWT 不足以呼叫更新端點。重新整理前端頁面後，`sessionStorage` 仍有 JWT 時可以繼續使用，JWT 過期時會嘗試自動更新。關閉分頁後 `sessionStorage` 清空，目前不會用 Cookie 自動重新登入。
 
+已啟動 Docker Compose 時，可用 `node tests/auth-smoke.mjs` 重跑登入、輪替、重放、跨會員隔離及登出的整合測試；腳本會刪除自己建立的測試帳號。
+
 現有 JWT 是無狀態的：登出撤銷的是 Refresh Token，已簽發的 Access Token 在原定 60 分鐘到期前仍有效。正式上線若需要「登出立刻撤銷所有 JWT」，要另加伺服器端撤銷檢查；正式部署也必須使用 HTTPS、私密 JWT 金鑰及安全的資料庫密碼。
