@@ -18,6 +18,7 @@
 - [x] 使用 Data Annotations 統一驗證 API Request
 - [x] 使用 Problem Details 與 Middleware 統一處理未預期例外
 - [x] 使用 Vue 狀態與條件渲染建立儀表板導覽
+- [x] 加入亮暗模式切換並記住選擇
 
 ## 建議學習順序
 
@@ -39,6 +40,8 @@ Request 自動驗證
 全域例外處理
     ↓
 Vue 儀表板導覽
+    ↓
+亮暗模式
 ```
 
 正式開始前會先決定採用 ASP.NET Core Identity，或以較精簡的 JWT 流程教學。兩者不會同時建立，避免重複的會員邏輯。

@@ -70,6 +70,7 @@ AspNetLearning/
 │   ├── 14-request-validation.md
 │   ├── 15-global-error-handling.md
 │   ├── 16-dashboard-navigation.md
+│   ├── 17-light-dark-theme.md
 │   └── development-roadmap.md
 ├── postman/
 │   ├── AspNetLearning.postman_collection.json

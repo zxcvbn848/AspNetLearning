@@ -8,7 +8,44 @@
   --border: #dfe3eb;
   --danger: #c33c54;
   --success: #23855a;
+  --glow: #dfddff;
+  --shell: rgb(255 255 255 / 92%);
+  --shell-border: rgb(255 255 255 / 70%);
+  --shadow: rgb(37 44 71 / 12%);
+  --focus-ring: rgb(91 91 214 / 30%);
+  --highlight: #f0efff;
+  --hover: #f5f5ff;
+  --secondary: #eef0f5;
+  --danger-background: #fff0f3;
+  --field: #ffffff;
+  --button-background: #5b5bd6;
+  --button-text: #ffffff;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* data-theme 由 Vue 設定；只覆蓋色彩，所有頁面沿用原有排版。 */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #101722;
+  --surface: #202b3a;
+  --text: #edf2fa;
+  --muted: #b0bdd0;
+  --primary: #b9b4ff;
+  --border: #405068;
+  --danger: #ff92a5;
+  --success: #85e5ba;
+  --glow: #273050;
+  --shell: #1a2432;
+  --shell-border: #354258;
+  --shadow: rgb(0 0 0 / 28%);
+  --focus-ring: rgb(185 180 255 / 45%);
+  --highlight: #34365c;
+  --hover: #2a3449;
+  --secondary: #303c50;
+  --danger-background: #472e3b;
+  --field: #182231;
+  --button-background: #6861d5;
+  --button-text: #ffffff;
 }
 
 * { box-sizing: border-box; }
@@ -18,7 +55,7 @@ body {
   margin: 0;
   padding: 48px 20px 24px;
   color: var(--text);
-  background: radial-gradient(circle at top left, #dfddff 0, transparent 32%), var(--background);
+  background: radial-gradient(circle at top left, var(--glow) 0, transparent 32%), var(--background);
 }
 
 button, input { font: inherit; }
@@ -30,7 +67,7 @@ button {
 }
 
 button:focus-visible, input:focus-visible {
-  outline: 3px solid rgb(91 91 214 / 30%);
+  outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -40,13 +77,17 @@ button:disabled { cursor: wait; opacity: 0.6; }
   width: min(100%, 1120px);
   margin: 0 auto;
   padding: clamp(24px, 5vw, 44px);
-  border: 1px solid rgb(255 255 255 / 70%);
+  border: 1px solid var(--shell-border);
   border-radius: 24px;
-  background: rgb(255 255 255 / 92%);
-  box-shadow: 0 24px 60px rgb(37 44 71 / 12%);
+  background: var(--shell);
+  box-shadow: 0 24px 60px var(--shadow);
 }
 
 .page-header { margin-bottom: 32px; }
+.header-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.theme-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; color: var(--text); background: var(--secondary); font-weight: 700; white-space: nowrap; }
+.theme-toggle:hover { background: var(--highlight); }
+.theme-toggle span { font-size: 1.1rem; line-height: 1; }
 
 .dashboard-layout {
   display: grid;
@@ -72,8 +113,8 @@ button:disabled { cursor: wait; opacity: 0.6; }
 
 .nav-button span { color: var(--text); font-weight: 750; }
 .nav-button small { font-size: 0.75rem; }
-.nav-button:hover { background: #f5f5ff; }
-.nav-button.active { color: var(--primary); background: #f0efff; }
+.nav-button:hover { background: var(--hover); }
+.nav-button.active { color: var(--primary); background: var(--highlight); }
 .nav-button.active span { color: var(--primary); }
 .dashboard-content { min-width: 0; }
 .content-heading { padding-bottom: 20px; border-bottom: 1px solid var(--border); }
@@ -86,17 +127,17 @@ button:disabled { cursor: wait; opacity: 0.6; }
   margin-top: 24px;
   padding: 4px;
   border-radius: 12px;
-  background: #eef0f5;
+  background: var(--secondary);
 }
 
 .auth-switch button { padding: 8px 18px; color: var(--muted); background: transparent; font-weight: 700; }
-.auth-switch button.active { color: var(--primary); background: var(--surface); box-shadow: 0 2px 8px rgb(37 44 71 / 10%); }
+.auth-switch button.active { color: var(--primary); background: var(--surface); box-shadow: 0 2px 8px var(--shadow); }
 
 .logout-button {
   margin-top: 18px;
   padding: 9px 14px;
   color: var(--danger);
-  background: #fff0f3;
+  background: var(--danger-background);
   font-weight: 700;
 }
 
@@ -122,7 +163,7 @@ h1 {
 .api-section { margin-top: 30px; }
 .api-section:first-of-type { margin-top: 0; }
 .section-kicker { margin-bottom: 5px; color: var(--primary); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
-.api-badge { padding: 5px 9px; border-radius: 999px; color: var(--primary); background: #f0efff; font-size: 0.74rem; font-weight: 700; }
+.api-badge { padding: 5px 9px; border-radius: 999px; color: var(--primary); background: var(--highlight); font-size: 0.74rem; font-weight: 700; }
 .auth-form { display: grid; grid-template-columns: 1fr 1fr; gap: 9px 12px; margin-top: 16px; }
 .form-field { display: grid; gap: 9px; }
 .form-field label { font-weight: 700; }
@@ -135,9 +176,9 @@ h1 {
   border-radius: 10px;
 }
 
-.auth-form button { grid-column: 1 / -1; min-height: 44px; margin-top: 4px; color: white; background: var(--primary); font-weight: 700; }
+.auth-form button { grid-column: 1 / -1; min-height: 44px; margin-top: 4px; color: var(--button-text); background: var(--button-background); font-weight: 700; }
 .auth-status { margin: 16px 0 0; color: var(--muted); }
-.test-error-button { margin-top: 14px; padding: 10px 14px; color: white; background: var(--primary); font-weight: 700; }
+.test-error-button { margin-top: 14px; padding: 10px 14px; color: var(--button-text); background: var(--button-background); font-weight: 700; }
 .trace-id { margin-bottom: 0; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.82rem; overflow-wrap: anywhere; }
 .user-details { display: grid; grid-template-columns: auto 1fr; gap: 10px 18px; margin: 16px 0 0; }
 .user-details div { display: contents; }
@@ -156,8 +197,8 @@ h1 {
 
 .input-row button {
   padding: 0 22px;
-  color: white;
-  background: var(--primary);
+  color: var(--button-text);
+  background: var(--button-background);
   font-weight: 700;
 }
 
@@ -206,8 +247,8 @@ h1 {
   background: transparent;
 }
 
-.action-button:hover { color: var(--primary); background: #f0efff; }
-.action-button.delete:hover { color: var(--danger); background: #fff0f3; }
+.action-button:hover { color: var(--primary); background: var(--highlight); }
+.action-button.delete:hover { color: var(--danger); background: var(--danger-background); }
 .empty-state { margin: 28px 0 4px; color: var(--muted); text-align: center; }
 
 footer {
@@ -264,12 +305,18 @@ footer {
 .edit-error { min-height: 20px; margin-bottom: 0; color: var(--danger); font-size: 0.9rem; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
 .dialog-actions button { min-width: 88px; padding: 11px 18px; font-weight: 700; }
-.secondary-button { color: var(--text); background: #eef0f5; }
-.primary-button { color: white; background: var(--primary); }
+.secondary-button { color: var(--text); background: var(--secondary); }
+.primary-button { color: var(--button-text); background: var(--button-background); }
+
+/* 明確指定輸入框色彩，避免瀏覽器預設的亮色欄位留在暗色畫面。 */
+.auth-form input, .input-row input, .edit-form input { color: var(--text); background: var(--field); }
+.auth-form input::placeholder, .input-row input::placeholder, .edit-form input::placeholder { color: var(--muted); opacity: 1; }
 
 @media (max-width: 560px) {
   body { padding: 20px 12px; }
   .dashboard-shell { border-radius: 18px; }
+  .header-top { align-items: flex-start; }
+  .theme-toggle { padding: 8px; font-size: 0.85rem; }
   .dashboard-layout { grid-template-columns: 1fr; gap: 24px; }
   .dashboard-nav { flex-direction: row; overflow-x: auto; padding-bottom: 6px; }
   .nav-button { flex: 0 0 auto; width: auto; white-space: nowrap; }

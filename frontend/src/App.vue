@@ -49,6 +49,18 @@ const loginVersion = ref(0)
 const hasAccessToken = ref(Boolean(window.sessionStorage.getItem('accessToken')))
 // Vite 正式建置時 DEV 是 false，因此不會顯示刻意產生錯誤的學習區塊。
 const isDevelopment = import.meta.env.DEV
+// localStorage 會在關閉瀏覽器後保留選擇；未選過時維持原本的亮色模式。
+const isDark = ref(window.localStorage.getItem('aspnetlearning-theme') === 'dark')
+// data-theme 讓 CSS 根據同一個屬性切換整頁的色彩變數。
+document.documentElement.dataset.theme = isDark.value ? 'dark' : 'light'
+
+/** 切換模式並保存選擇，重新整理頁面後仍沿用。 */
+function toggleTheme(): void {
+  isDark.value = !isDark.value
+  const theme = isDark.value ? 'dark' : 'light'
+  document.documentElement.dataset.theme = theme
+  window.localStorage.setItem('aspnetlearning-theme', theme)
+}
 
 /** 切換功能頁；進入待辦頁時同步取得最新資料。 */
 function selectPage(page: DashboardPage): void {
@@ -243,7 +255,14 @@ onBeforeUnmount(() => {
 <template>
   <main class="dashboard-shell">
     <header class="page-header">
-      <p class="eyebrow">Vue 3 × TypeScript × ASP.NET Core</p>
+      <div class="header-top">
+        <p class="eyebrow">Vue 3 × TypeScript × ASP.NET Core</p>
+        <!-- aria-pressed 告訴輔助工具「暗色模式」目前是否啟用。 -->
+        <button type="button" class="theme-toggle" :aria-pressed="isDark" @click="toggleTheme">
+          <span aria-hidden="true">{{ isDark ? '☀' : '☾' }}</span>
+          暗色模式
+        </button>
+      </div>
       <h1>API 整合平台</h1>
       <p class="subtitle">集中操作與驗證 AspNetLearning 專案的所有 API。</p>
     </header>
