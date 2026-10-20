@@ -23,6 +23,9 @@ public sealed class AppDbContext : DbContext
     /// <summary>代表 PostgreSQL 中的 users 資料表。</summary>
     public DbSet<User> Users => Set<User>();
 
+    /// <summary>登入工作階段使用的 Refresh Token 雜湊。</summary>
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
     /// <summary>
     /// 設定 TodoItem 與 PostgreSQL 資料表的對應規則及初始資料。
     /// </summary>
@@ -85,6 +88,16 @@ public sealed class AppDbContext : DbContext
 
             entity.Property(user => user.CreatedAtUtc)
                 .IsRequired();
+        });
+
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.ToTable("refresh_tokens");
+            entity.HasKey(token => token.Id);
+            entity.Property(token => token.TokenHash).IsRequired().HasMaxLength(64);
+            entity.HasIndex(token => token.TokenHash).IsUnique();
+            entity.HasIndex(token => token.FamilyId);
+            entity.HasOne(token => token.User).WithMany().HasForeignKey(token => token.UserId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

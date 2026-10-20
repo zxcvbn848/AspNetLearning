@@ -127,6 +127,7 @@ builder.Services.AddScoped<TodoService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<RefreshTokenService>();
 
 // 根據 builder 中的設定與服務，建立可以處理 HTTP 請求的 WebApplication。
 var app = builder.Build();
