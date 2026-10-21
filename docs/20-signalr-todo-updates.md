@@ -4,7 +4,7 @@
 
 ## 用環境變數比較開與關
 
-專案根目錄的 `.env.example` 提供 `TODO_REALTIME_ENABLED=true` 範例。複製為不會提交到 Git 的 `.env`，改成 `false` 即可停用即時同步。改完後在專案根目錄執行 `docker compose up -d --force-recreate app frontend`，再重新載入瀏覽器。此設定會同時讓後端不提供 `/hubs/todos`，前端不建立 SignalR 連線並顯示「已停用」；一般 Todo API 仍可新增與查詢，但另一個分頁不會自動更新。改回 `true` 並重建容器，即可再次觀察即時同步。Compose 預設值是 `true`，所以沒有 `.env` 也會啟用。
+專案根目錄的 `.env.example` 提供 `TODO_REALTIME_ENABLED=true` 範例。複製為不會提交到 Git 的 `.env`，改成 `false` 即可停用即時同步。改完後在專案根目錄執行 `docker compose up -d app frontend`，Compose 會偵測設定變更並自動重建受影響的容器；再重新載入瀏覽器。此設定會同時讓後端不提供 `/hubs/todos`，前端不建立 SignalR 連線並顯示「已停用」；一般 Todo API 仍可新增與查詢，但另一個分頁不會自動更新。改回 `true` 並執行同一指令，即可再次觀察即時同步。單純執行 `docker compose restart` 不會更新既有容器的環境變數。Compose 預設值是 `true`，所以沒有 `.env` 也會啟用。
 
 ## 從 HTTP 到即時通知
 
