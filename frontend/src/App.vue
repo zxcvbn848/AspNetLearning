@@ -9,6 +9,8 @@ import TodoListItem from './components/TodoListItem.vue'
 import { logoutUser } from './services/authApi'
 import { authUnauthorizedEvent } from './services/apiClient'
 import { createTodoItem, deleteTodoItem, getTodoItems, updateTodoItem } from './services/todoApi'
+import { connectTodoUpdates } from './services/todoRealtime'
+import type { HubConnection } from '@microsoft/signalr'
 import type { TodoItem } from './types/todo'
 
 // 使用字串聯集限制頁面名稱，避免傳入拼錯或不存在的頁面。
@@ -41,6 +43,8 @@ const isSuccess = ref(false)
 const isCreating = ref(false)
 const isLoggingOut = ref(false)
 const isConnected = ref(false)
+const realtimeState = ref<'connected' | 'reconnecting' | 'disconnected'>('disconnected')
+let realtimeConnection: HubConnection | null = null
 const editDialog = ref<HTMLDialogElement | null>(null)
 const editingTodo = ref<TodoItem | null>(null)
 const editTitle = ref('')
@@ -100,10 +104,37 @@ async function handleLoggedIn(): Promise<void> {
   hasAccessToken.value = true
   showMessage('')
   await loadTodos()
+  await startRealtime()
+}
+
+/** 每個已登入分頁各自連線；換帳號或登出時停止舊連線。 */
+async function startRealtime(): Promise<void> {
+  await stopRealtime()
+  if (!window.sessionStorage.getItem('accessToken')) return
+
+  const connection = connectTodoUpdates(
+    () => { void loadTodos() },
+    state => { if (realtimeConnection === connection) realtimeState.value = state },
+  )
+  realtimeConnection = connection
+  try {
+    await connection.start()
+    if (realtimeConnection === connection) realtimeState.value = 'connected'
+  } catch {
+    if (realtimeConnection === connection) realtimeState.value = 'disconnected'
+  }
+}
+
+async function stopRealtime(): Promise<void> {
+  const connection = realtimeConnection
+  realtimeConnection = null
+  realtimeState.value = 'disconnected'
+  await connection?.stop()
 }
 
 /** 清除目前分頁的登入資料，並讓會員與 Todo 畫面回到未登入狀態。 */
 function clearAuthState(message: string, success: boolean): void {
+  void stopRealtime()
   window.sessionStorage.removeItem('accessToken')
   hasAccessToken.value = false
   isConnected.value = false
@@ -259,12 +290,16 @@ function showError(error: unknown): void {
 // 元件掛載後監聽授權失效事件，並立即載入 PostgreSQL 中的 Todo。
 onMounted(() => {
   window.addEventListener(authUnauthorizedEvent, handleUnauthorized)
-  if (hasAccessToken.value) void loadTodos()
+  if (hasAccessToken.value) {
+    void loadTodos()
+    void startRealtime()
+  }
 })
 
 // 元件移除前解除全域事件，避免重複註冊造成同一事件執行多次。
 onBeforeUnmount(() => {
   window.removeEventListener(authUnauthorizedEvent, handleUnauthorized)
+  void stopRealtime()
 })
 </script>
 
@@ -351,7 +386,8 @@ onBeforeUnmount(() => {
           <div class="content-heading">
             <p class="eyebrow">Todo API</p>
             <h2 id="todo-page-heading">待辦事項</h2>
-            <p>新增、完成、修改與刪除目前會員的待辦事項。</p>
+            <p>新增、完成、修改與刪除目前會員的待辦事項。開兩個分頁可觀察即時同步。</p>
+            <p v-if="hasAccessToken" role="status">即時連線：{{ realtimeState === 'connected' ? '已連線' : realtimeState === 'reconnecting' ? '重新連線中' : '未連線' }}</p>
           </div>
 
           <!-- prevent 阻止瀏覽器送出表單後重新整理整頁。 -->
@@ -425,6 +461,10 @@ onBeforeUnmount(() => {
             <div>
               <dt>Todo API</dt>
               <dd>{{ !hasAccessToken ? '登入後檢查' : isConnected ? '連線正常' : '無法連線' }}</dd>
+            </div>
+            <div>
+              <dt>SignalR 即時通知</dt>
+              <dd>{{ !hasAccessToken ? '登入後連線' : realtimeState === 'connected' ? '已連線' : realtimeState === 'reconnecting' ? '重新連線中' : '未連線' }}</dd>
             </div>
             <div>
               <dt>前端環境</dt>

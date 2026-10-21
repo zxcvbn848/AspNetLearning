@@ -9,6 +9,11 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     proxy: {
+      '/hubs': {
+        target: 'http://app:8080',
+        changeOrigin: true,
+        ws: true,
+      },
       // 將 /todos 轉送到 Compose 內的 ASP.NET Core app 服務。
       '/todos': {
         target: 'http://app:8080',
