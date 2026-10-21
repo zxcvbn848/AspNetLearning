@@ -1,0 +1,29 @@
+{
+  // 顯示在 Cursor Dev Containers 清單中的環境名稱。
+  "name": "AspNetLearning (.NET 10)",
+
+  // 使用專案既有的 Docker Compose 設定，不另外維護第二套容器設定。
+  "dockerComposeFile": "../compose.yaml",
+
+  // 指定 Cursor 要連入 compose.yaml 中的 app 服務。
+  "service": "app",
+
+  // 專案在容器內掛載到 /app，因此將它設為 Cursor 的工作目錄。
+  "workspaceFolder": "/app",
+
+  // 保留 compose.yaml 的 dotnet watch 啟動命令，讓網站繼續自動重新載入。
+  "overrideCommand": false,
+
+  // 關閉 Cursor 的 Dev Container 後，一併停止這組 Compose 服務。
+  "shutdownAction": "stopCompose",
+
+  // 指定進入容器後需要安裝的 Cursor 擴充套件。
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anysphere.csharp",
+        "Vue.volar"
+      ]
+    }
+  }
+}

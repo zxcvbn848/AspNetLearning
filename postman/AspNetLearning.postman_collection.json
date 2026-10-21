@@ -1,0 +1,758 @@
+{
+  "info": {
+    "_postman_id": "c98aebd4-bd56-4b53-bfad-4a2fcf820455",
+    "name": "AspNetLearning",
+    "description": "ASP.NET Core 學習專案的 API 請求集合。包含會員註冊、JWT 登入、目前會員與會員專屬 Todo CRUD。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "首頁",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            ""
+          ]
+        },
+        "description": "呼叫網站根路徑，預期回傳 Hello World!。"
+      },
+      "response": []
+    },
+    {
+      "name": "第一課：問候 API",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/hello/{{name}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "hello",
+            "{{name}}"
+          ]
+        },
+        "description": "將 name 變數放入路由，預期回傳包含問候文字的 JSON。"
+      },
+      "response": []
+    },
+    {
+      "name": "第二課：取得待辦清單",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/todos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "todos"
+          ]
+        },
+        "description": "使用 Bearer Token 取得目前登入會員自己的待辦事項，預期回傳 HTTP 200 與 JSON 陣列。",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"取得會員自己的待辦清單會回傳 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "第三課：建立待辦事項",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"閱讀 POST API 文件\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/todos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "todos"
+          ]
+        },
+        "description": "使用 Bearer Token 建立目前會員的待辦事項，預期回傳 HTTP 201，並自動保存新的 todoId。",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"建立會員自己的待辦事項會回傳 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "const response = pm.response.json();",
+              "pm.collectionVariables.set(\"todoId\", response.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "第四課：更新待辦事項",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"認識 Controller 與 Service\",\n  \"isCompleted\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/todos/{{todoId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "todos",
+            "{{todoId}}"
+          ]
+        },
+        "description": "使用 Bearer Token 更新目前會員自己的待辦事項，預期回傳 HTTP 200；其他會員的資料會回傳 404。",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"更新會員自己的待辦事項會回傳 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "第四課：刪除待辦事項",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/todos/{{todoId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "todos",
+            "{{todoId}}"
+          ]
+        },
+        "description": "使用 Bearer Token 刪除目前會員自己的待辦事項，預期回傳 HTTP 204；其他會員的資料會回傳 404。",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"刪除會員自己的待辦事項會回傳 204\", function () {",
+              "    pm.response.to.have.status(204);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "第九課：會員註冊",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{registerEmail}}\",\n  \"password\": \"Learning123!\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        },
+        "description": "建立會員，預期回傳 HTTP 201 與不含密碼雜湊的會員資料。重複 Email 會回傳 HTTP 409。"
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('registerEmail', pm.variables.replaceIn('{{$randomEmail}}'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('註冊成功回傳 201', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('回應不包含密碼與密碼雜湊', function () {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).not.to.have.property('password');",
+              "    pm.expect(response).not.to.have.property('passwordHash');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "第十課：會員登入",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{registerEmail}}\",\n  \"password\": \"Learning123!\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "description": "使用第九課剛建立的會員登入，預期回傳 HTTP 200 與 JWT，並自動保存到 accessToken Collection Variable。"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('登入成功回傳 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const response = pm.response.json();",
+              "pm.test('回傳格式正確的 JWT', function () {",
+              "    pm.expect(response.tokenType).to.eql('Bearer');",
+              "    pm.expect(response.accessToken.split('.')).to.have.lengthOf(3);",
+              "});",
+              "pm.collectionVariables.set('accessToken', response.accessToken);"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "第十八課：更新 Access Token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/refresh",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "refresh"
+          ]
+        },
+        "description": "使用登入後 Postman Cookie Jar 保存的 HttpOnly Cookie 取得新的 Access Token；每次呼叫都會輪替 Cookie。"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('回傳 HTTP 200', function () { pm.response.to.have.status(200); });",
+              "const response = pm.response.json();",
+              "pm.test('取得新 JWT', function () { pm.expect(response.accessToken.split('.')).to.have.lengthOf(3); });",
+              "pm.collectionVariables.set('accessToken', response.accessToken);"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "第十八課：登出並撤銷 Refresh Token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/logout",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "logout"
+          ]
+        },
+        "description": "撤銷目前 Cookie 對應的工作階段；之後再呼叫更新端點會回傳 401。既有 JWT 在到期前仍有效。"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('回傳 HTTP 204', function () { pm.response.to.have.status(204); });",
+              "pm.collectionVariables.unset('accessToken');"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "第十一課：取得目前會員",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/me",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "me"
+          ]
+        },
+        "description": "使用登入後保存的 Bearer Token 取得目前會員，預期回傳 HTTP 200。缺少、無效或過期 Token 會回傳 HTTP 401。"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('有效 Token 回傳 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const response = pm.response.json();",
+              "pm.test('回傳登入會員且不包含密碼資料', function () {",
+              "    pm.expect(response.email).to.eql(pm.collectionVariables.get('registerEmail'));",
+              "    pm.expect(response).not.to.have.property('password');",
+              "    pm.expect(response).not.to.have.property('passwordHash');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "第十三課：驗證失效 Token",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "invalid-token",
+              "type": "string"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/me",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "me"
+          ]
+        },
+        "description": "使用刻意無效的 Bearer Token 呼叫受保護 API，預期回傳 HTTP 401。此請求不會覆蓋登入後保存的 accessToken。"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"無效 Token 會回傳 401\", function () {",
+              "    pm.response.to.have.status(401);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "第十四課：驗證錯誤 Email",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"not-an-email\",\n  \"password\": \"Learning123!\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        },
+        "description": "驗證 Data Annotations 會拒絕錯誤 Email，並在 errors.Email 回傳中文訊息。"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"錯誤 Email 回傳 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Email 驗證訊息正確\", function () {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.errors.Email).to.include(\"Email 格式不正確。\");",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "第十四課：驗證空白 Todo",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"   \"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/todos",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "todos"
+          ]
+        },
+        "description": "使用登入 Token 驗證 Required Attribute 會拒絕只有空白的 Title。"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"空白 Title 回傳 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "pm.test(\"Title 驗證訊息正確\", function () {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response.errors.Title).to.include(\"Title 不可為空白。\");",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "第十五課：全域例外處理",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/problem+json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/debug/error",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "debug",
+            "error"
+          ]
+        },
+        "description": "只供 Development 環境使用。刻意拋出例外，確認全域 Middleware 回傳 HTTP 500、Problem Details 與 Trace Id。"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"未預期例外回傳 500\", function () {",
+              "    pm.response.to.have.status(500);",
+              "});",
+              "",
+              "const response = pm.response.json();",
+              "pm.test(\"回傳 Problem Details 與 Trace Id\", function () {",
+              "    pm.expect(response.title).to.eql(\"伺服器發生未預期錯誤。\");",
+              "    pm.expect(response.status).to.eql(500);",
+              "    pm.expect(response.traceId).to.be.a(\"string\").and.not.empty;",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8180",
+      "type": "string",
+      "description": "ASP.NET Core 開發環境的網址。"
+    },
+    {
+      "key": "name",
+      "value": "Andy",
+      "type": "string",
+      "description": "第一課問候 API 使用的名稱。"
+    },
+    {
+      "key": "todoId",
+      "value": "2",
+      "type": "string",
+      "description": "第四課更新與刪除 API 使用的待辦事項 Id。"
+    },
+    {
+      "key": "registerEmail",
+      "value": "",
+      "type": "string",
+      "description": "第九課 Pre-request Script 自動產生並供登入使用的 Email。"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string",
+      "description": "第十課登入成功後由 Test Script 自動保存的 JWT。"
+    }
+  ]
+}

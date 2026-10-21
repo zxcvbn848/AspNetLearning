@@ -1,0 +1,62 @@
+services:
+  app:
+    image: mcr.microsoft.com/dotnet/sdk:10.0
+    working_dir: /app
+    command: dotnet watch run --non-interactive --no-launch-profile
+    ports:
+      - "8180:8080"
+    volumes:
+      - .:/app
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://0.0.0.0:8080
+      DOTNET_USE_POLLING_FILE_WATCHER: "1"
+      # ASP.NET Core 使用雙底線表示設定的階層，本項會對應 ConnectionStrings:DefaultConnection。
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=aspnetlearning;Username=aspnetlearning;Password=${POSTGRES_PASSWORD:-aspnetlearning}
+      # 本機學習用 JWT 金鑰；正式部署必須以環境變數提供不同的強隨機金鑰。
+      Jwt__Key: ${JWT_KEY:-aspnetlearning-local-development-jwt-key-change-me}
+    depends_on:
+      db:
+        # 等 PostgreSQL 通過健康檢查後才啟動網站，避免應用程式連線過早。
+        condition: service_healthy
+
+  db:
+    # 使用 PostgreSQL 18 的輕量 Alpine Linux 映像。
+    image: postgres:18-alpine
+    ports:
+      # 只開放給這台 Mac，讓 DataGrip 可連線且不暴露給區域網路。
+      - "127.0.0.1:9181:5432"
+    environment:
+      POSTGRES_DB: aspnetlearning
+      POSTGRES_USER: aspnetlearning
+      # 此預設密碼只供本機學習；可在未提交 Git 的 .env 以 POSTGRES_PASSWORD 覆蓋。
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aspnetlearning}
+    volumes:
+      # 將資料庫檔案保存在 Docker Volume，重建容器後資料仍存在。
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aspnetlearning -d aspnetlearning"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    # 使用 Node.js 22 執行 Vue 3 + TypeScript 的 Vite 開發伺服器。
+    image: node:22-alpine
+    working_dir: /frontend
+    command: sh -c "npm install && npm run dev"
+    ports:
+      # 前端使用 8181，後端 API 保持 8180。
+      - "127.0.0.1:8181:5173"
+    volumes:
+      - ./frontend:/frontend
+      # node_modules 放在 Docker Volume，避免寫入 Mac 專案目錄。
+      - frontend_node_modules:/frontend/node_modules
+    depends_on:
+      - app
+
+volumes:
+  # 宣告由 Docker 管理的 PostgreSQL 資料 Volume。
+  postgres_data:
+  # 保存前端容器安裝的 npm 套件。
+  frontend_node_modules:

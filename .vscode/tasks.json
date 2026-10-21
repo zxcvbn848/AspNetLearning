@@ -1,0 +1,34 @@
+{
+  // 指定 Cursor 工作設定的格式版本。
+  "version": "2.0.0",
+
+  // 定義可以從「Tasks: Run Task」執行的工作。
+  "tasks": [
+    {
+      // 編譯專案並檢查 C# 程式碼。
+      "label": "build",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/AspNetLearning.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoAlign"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      // 產生可供部署的專案輸出。
+      "label": "publish",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "publish",
+        "${workspaceFolder}/AspNetLearning.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoAlign"
+      ],
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}
