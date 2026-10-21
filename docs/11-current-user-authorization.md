@@ -38,7 +38,7 @@ string? subject = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
 ## MapInboundClaims
 
-`Program.cs` 設定：
+`Authentication/JwtAuthenticationExtensions.cs` 設定：
 
 ```csharp
 options.MapInboundClaims = false;

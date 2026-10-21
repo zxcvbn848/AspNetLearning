@@ -1,8 +1,8 @@
 // 匯入 AppDbContext 所在的命名空間。
 using AspNetLearning.Data;
 
-// 匯入讀取 JWT 會員 Id 的 Extension Method。
-using AspNetLearning.Extensions;
+// 匯入 JWT 驗證服務的註冊方法。
+using AspNetLearning.Authentication;
 
 // 匯入問候 API 所在的命名空間，讓這個檔案可以使用 MapHelloEndpoints。
 using AspNetLearning.Endpoints;
@@ -16,11 +16,7 @@ using AspNetLearning.Hubs;
 using AspNetLearning.Models;
 using Microsoft.AspNetCore.Identity;
 
-// 匯入 JWT 驗證、簽章金鑰與文字編碼相關類別。
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 // 匯入 Entity Framework Core，讓程式可以使用 UseNpgsql 與 Migrate。
 using Microsoft.EntityFrameworkCore;
@@ -63,69 +59,8 @@ builder.Services.AddProblemDetails(options =>
     };
 });
 
-// JWT 簽章金鑰至少需要 32 bytes，避免使用過短金鑰降低 HMAC-SHA256 安全性。
-string jwtKey = builder.Configuration["Jwt:Key"]
-    ?? throw new InvalidOperationException("找不到 Jwt:Key 設定。");
-
-if (Encoding.UTF8.GetByteCount(jwtKey) < 32)
-{
-    throw new InvalidOperationException("Jwt:Key 至少需要 32 bytes。");
-}
-
-builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        // 保留 JWT 原始 Claim 名稱，讓 Controller 可以直接讀取標準 sub Claim。
-        options.MapInboundClaims = false;
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidateAudience = true,
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero
-        };
-
-        options.Events = new JwtBearerEvents
-        {
-            // 瀏覽器的 WebSocket 無法設定 Authorization Header；只允許 Hub 從查詢字串讀取 JWT。
-            OnMessageReceived = context =>
-            {
-                if (context.Request.Path.StartsWithSegments("/hubs/todos") &&
-                    context.Request.Query.TryGetValue("access_token", out var token))
-                {
-                    context.Token = token;
-                }
-
-                return Task.CompletedTask;
-            },
-            // JWT 簽章與有效期限通過後，再確認會員仍存在，避免已刪除帳號繼續使用舊 Token。
-            OnTokenValidated = async context =>
-            {
-                if (context.Principal is null ||
-                    !context.Principal.TryGetUserId(out int userId))
-                {
-                    context.Fail("Token 缺少有效的會員 Id。");
-                    return;
-                }
-
-                AppDbContext dbContext = context.HttpContext.RequestServices
-                    .GetRequiredService<AppDbContext>();
-
-                // shortcut: 每個受保護請求查詢一次 users，流量增加時再加入快取或 Security Stamp。
-                bool userExists = await dbContext.Users.AnyAsync(user => user.Id == userId);
-
-                if (!userExists)
-                {
-                    context.Fail("Token 所屬會員不存在。");
-                }
-            }
-        };
-    });
+// 將 JWT 驗證細節集中在 Authentication；入口只顯示服務註冊順序。
+builder.Services.AddJwtAuthentication(builder.Configuration);
 
 // AddAuthorization 提供下一階段 [Authorize] 保護 API 所需的授權服務。
 builder.Services.AddAuthorization();
