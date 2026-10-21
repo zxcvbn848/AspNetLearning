@@ -53,6 +53,8 @@ const isEditing = ref(false)
 const hasAccessToken = ref(Boolean(window.sessionStorage.getItem('accessToken')))
 // Vite 正式建置時 DEV 是 false，因此不會顯示刻意產生錯誤的學習區塊。
 const isDevelopment = import.meta.env.DEV
+// Vite 讀取容器環境變數；關閉時不建立 SignalR 連線，畫面也明確標示停用。
+const realtimeEnabled = import.meta.env.VITE_TODO_REALTIME_ENABLED !== 'false'
 // localStorage 會在關閉瀏覽器後保留選擇；未選過時維持原本的亮色模式。
 const isDark = ref(window.localStorage.getItem('aspnetlearning-theme') === 'dark')
 // data-theme 讓 CSS 根據同一個屬性切換整頁的色彩變數。
@@ -110,7 +112,7 @@ async function handleLoggedIn(): Promise<void> {
 /** 每個已登入分頁各自連線；換帳號或登出時停止舊連線。 */
 async function startRealtime(): Promise<void> {
   await stopRealtime()
-  if (!window.sessionStorage.getItem('accessToken')) return
+  if (!realtimeEnabled || !window.sessionStorage.getItem('accessToken')) return
 
   const connection = connectTodoUpdates(
     () => { void loadTodos() },
@@ -387,7 +389,7 @@ onBeforeUnmount(() => {
             <p class="eyebrow">Todo API</p>
             <h2 id="todo-page-heading">待辦事項</h2>
             <p>新增、完成、修改與刪除目前會員的待辦事項。開兩個分頁可觀察即時同步。</p>
-            <p v-if="hasAccessToken" role="status">即時連線：{{ realtimeState === 'connected' ? '已連線' : realtimeState === 'reconnecting' ? '重新連線中' : '未連線' }}</p>
+            <p v-if="hasAccessToken" role="status">即時連線：{{ !realtimeEnabled ? '已停用' : realtimeState === 'connected' ? '已連線' : realtimeState === 'reconnecting' ? '重新連線中' : '未連線' }}</p>
           </div>
 
           <!-- prevent 阻止瀏覽器送出表單後重新整理整頁。 -->
@@ -464,7 +466,7 @@ onBeforeUnmount(() => {
             </div>
             <div>
               <dt>SignalR 即時通知</dt>
-              <dd>{{ !hasAccessToken ? '登入後連線' : realtimeState === 'connected' ? '已連線' : realtimeState === 'reconnecting' ? '重新連線中' : '未連線' }}</dd>
+              <dd>{{ !realtimeEnabled ? '已停用' : !hasAccessToken ? '登入後連線' : realtimeState === 'connected' ? '已連線' : realtimeState === 'reconnecting' ? '重新連線中' : '未連線' }}</dd>
             </div>
             <div>
               <dt>前端環境</dt>

@@ -196,7 +196,11 @@ app.UseAuthorization();
 
 // 尋找 Controller 上的 Route、HttpGet、HttpPost、HttpPut 與 HttpDelete 等 Attribute，並建立對應路由。
 app.MapControllers();
-app.MapHub<TodoHub>("/hubs/todos", options => options.CloseOnAuthenticationExpiration = true);
+// 關閉開關時不提供 Hub 路由；一般 Todo API 仍可照常使用。
+if (builder.Configuration.GetValue("Features:TodoRealtime", true))
+{
+    app.MapHub<TodoHub>("/hubs/todos", options => options.CloseOnAuthenticationExpiration = true);
+}
 
 // 啟動應用程式，開始監聽並處理 HTTP 請求。
 app.Run();

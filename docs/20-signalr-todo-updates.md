@@ -2,6 +2,10 @@
 
 登入後，在兩個瀏覽器分頁開啟 `http://localhost:8181` 的「待辦事項」。其中一頁新增、修改、完成或刪除 Todo，另一頁的清單會自動更新。「即時連線」文字會顯示已連線、重新連線中或未連線。這個功能不需要 Postman Collection，因為 SignalR 使用持續連線，而不是一般的單次 HTTP API 呼叫。
 
+## 用環境變數比較開與關
+
+專案根目錄的 `.env.example` 提供 `TODO_REALTIME_ENABLED=true` 範例。複製為不會提交到 Git 的 `.env`，改成 `false` 即可停用即時同步。改完後在專案根目錄執行 `docker compose up -d --force-recreate app frontend`，再重新載入瀏覽器。此設定會同時讓後端不提供 `/hubs/todos`，前端不建立 SignalR 連線並顯示「已停用」；一般 Todo API 仍可新增與查詢，但另一個分頁不會自動更新。改回 `true` 並重建容器，即可再次觀察即時同步。Compose 預設值是 `true`，所以沒有 `.env` 也會啟用。
+
 ## 從 HTTP 到即時通知
 
 原本 Vue 只有按下按鈕時呼叫 `GET /todos`。現在 `frontend/src/services/todoRealtime.ts` 連到 `/hubs/todos`；連線成功後，後端可主動送出 `TodosChanged` 事件。Vue 收到事件，仍使用原本的 `GET /todos` 取得資料。事件只表示「資料變了」，不把完整清單塞進訊息。

@@ -253,6 +253,7 @@ http://localhost:8180
 開發環境的互動式 API 文件位於 [http://localhost:8180/scalar](http://localhost:8180/scalar)；可下載的 OpenAPI JSON 位於 [http://localhost:8180/openapi/v1.json](http://localhost:8180/openapi/v1.json)。文件與測試頁面不會在 Production 環境開放。使用方式請看 [第十九課：API 文件](docs/19-openapi-reference.md)。
 
 登入後在兩個前端分頁開啟「待辦事項」，於其中一頁新增、編輯或刪除，另一頁會透過 SignalR 自動更新。程式碼閱讀順序與連線說明請看 [第二十課：SignalR 即時通知](docs/20-signalr-todo-updates.md)。
+可在專案根目錄的 `.env` 設定 `TODO_REALTIME_ENABLED=false` 停用，再重建 app 與 frontend 容器；預設為啟用。
 
 第八階段的 Vue 與 TypeScript 說明請閱讀 `docs/08-vue-typescript-frontend.md`。
 
