@@ -52,7 +52,7 @@ JWT 的 Payload 只是 Base64Url 編碼，並沒有加密，因此不能放密�
 
 正式環境必須使用部署平台提供的強隨機金鑰，不可沿用提交在專案裡的本機預設值。
 
-`Program.cs` 會檢查：
+`Program.cs` 註冊 `AddJwtAuthentication()`；實際檢查寫在 `Authentication/JwtAuthenticationExtensions.cs`：
 
 - Issuer 是否正確。
 - Audience 是否正確。

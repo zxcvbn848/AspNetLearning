@@ -9,6 +9,8 @@ AspNetLearning/
 ├── .devcontainer/
 │   └── devcontainer.json
 ├── Program.cs
+├── Authentication/
+│   └── JwtAuthenticationExtensions.cs
 ├── AspNetLearning.csproj
 ├── appsettings.json
 ├── appsettings.Development.json
@@ -82,6 +84,7 @@ AspNetLearning/
 │   ├── 18-refresh-token.md
 │   ├── 19-openapi-reference.md
 │   ├── 20-signalr-todo-updates.md
+│   ├── 21-jwt-configuration.md
 │   └── development-roadmap.md
 ├── postman/
 │   ├── AspNetLearning.postman_collection.json
@@ -107,6 +110,7 @@ AspNetLearning/
 ### `Program.cs`
 
 ASP.NET Core 應用程式的進入點，負責建立、設定並啟動網站。
+JWT 驗證的詳細設定放在 `Authentication/JwtAuthenticationExtensions.cs`；`Program.cs` 只呼叫 `AddJwtAuthentication()`。閱讀方式請看 [第二十一課：整理 JWT 設定](docs/21-jwt-configuration.md)。
 
 ```csharp
 // 匯入問候 API 所在的命名空間。
