@@ -23,7 +23,7 @@
 
 ## 待辦：API 文件
 
-- [ ] 建立可瀏覽的 API 文件，涵蓋各端點的請求與回應格式、狀態碼、JWT 授權、Refresh Token Cookie，以及操作範例。
+- [x] 建立可瀏覽的 API 文件，涵蓋各端點的請求與回應格式、狀態碼、JWT 授權、Refresh Token Cookie，以及操作範例。
 
 ## 待辦：WebSocket 即時通訊
 

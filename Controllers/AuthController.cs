@@ -32,6 +32,9 @@ public sealed class AuthController : ControllerBase
     /// </summary>
     /// <returns>成功時回傳 HTTP 201；Email 已存在時回傳 HTTP 409。</returns>
     [HttpPost("register")]
+    [ProducesResponseType(typeof(UserResponse), StatusCodes.Status201Created, "application/json")]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
     public async Task<ActionResult<UserResponse>> Register(RegisterRequest request)
     {
         User? user = await _userService.RegisterAsync(request.Email, request.Password);
@@ -49,6 +52,9 @@ public sealed class AuthController : ControllerBase
     /// </summary>
     /// <returns>成功時回傳 HTTP 200 與 Token；失敗時回傳 HTTP 401。</returns>
     [HttpPost("login")]
+    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK, "application/json")]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
     public async Task<ActionResult<LoginResponse>> Login(LoginRequest request)
     {
         User? user = await _userService.AuthenticateAsync(request.Email, request.Password);
@@ -66,6 +72,8 @@ public sealed class AuthController : ControllerBase
 
     /// <summary>使用 HttpOnly Cookie 換發 Access Token，並輪替 Refresh Token。</summary>
     [HttpPost("refresh")]
+    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK, "application/json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
     public async Task<ActionResult<LoginResponse>> Refresh()
     {
         string? cookie = Request.Cookies[RefreshTokenService.CookieName];
@@ -85,6 +93,7 @@ public sealed class AuthController : ControllerBase
 
     /// <summary>撤銷目前工作階段並刪除瀏覽器 Cookie。</summary>
     [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Logout()
     {
         string? cookie = Request.Cookies[RefreshTokenService.CookieName];
@@ -112,6 +121,8 @@ public sealed class AuthController : ControllerBase
     /// <returns>Token 有效時回傳 HTTP 200 與會員資料。</returns>
     [Authorize]
     [HttpGet("me")]
+    [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK, "application/json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
     public async Task<ActionResult<UserResponse>> GetCurrentUser()
     {
         // 從已通過 JwtBearer 驗證的 ClaimsPrincipal 讀取標準 sub Claim。

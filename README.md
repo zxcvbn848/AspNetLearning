@@ -15,6 +15,7 @@ AspNetLearning/
 ├── compose.yaml
 ├── Contracts/
 │   ├── CreateTodoRequest.cs
+│   ├── HelloResponse.cs
 │   ├── LoginRequest.cs
 │   ├── LoginResponse.cs
 │   ├── RegisterRequest.cs
@@ -50,6 +51,8 @@ AspNetLearning/
 │   ├── TodoItem.cs
 │   ├── RefreshToken.cs
 │   └── User.cs
+├── OpenApi/
+│   └── ApiDocumentation.cs
 ├── Services/
 │   ├── TokenService.cs
 │   ├── RefreshTokenService.cs
@@ -74,6 +77,7 @@ AspNetLearning/
 │   ├── 16-dashboard-navigation.md
 │   ├── 17-light-dark-theme.md
 │   ├── 18-refresh-token.md
+│   ├── 19-openapi-reference.md
 │   └── development-roadmap.md
 ├── postman/
 │   ├── AspNetLearning.postman_collection.json
@@ -242,9 +246,11 @@ http://localhost:8181
 http://localhost:8180
 ```
 
+開發環境的互動式 API 文件位於 [http://localhost:8180/scalar](http://localhost:8180/scalar)；可下載的 OpenAPI JSON 位於 [http://localhost:8180/openapi/v1.json](http://localhost:8180/openapi/v1.json)。文件與測試頁面不會在 Production 環境開放。使用方式請看 [第十九課：API 文件](docs/19-openapi-reference.md)。
+
 第八階段的 Vue 與 TypeScript 說明請閱讀 `docs/08-vue-typescript-frontend.md`。
 
-後續功能規劃請閱讀 `docs/development-roadmap.md`；下一階段預計建立會員系統。
+後續功能規劃請閱讀 `docs/development-roadmap.md`。
 
 ## 查看執行紀錄
 

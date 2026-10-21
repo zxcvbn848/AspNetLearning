@@ -49,6 +49,8 @@ public sealed class TodosController : ControllerBase
     /// <returns>HTTP 200 與待辦事項陣列。</returns>
     // HttpGet 表示這個 Action 處理 GET /todos。
     [HttpGet]
+    [ProducesResponseType(typeof(List<TodoItem>), StatusCodes.Status200OK, "application/json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
     public async Task<ActionResult<List<TodoItem>>> GetAll()
     {
         if (!User.TryGetUserId(out int userId))
@@ -70,6 +72,9 @@ public sealed class TodosController : ControllerBase
     /// <returns>成功時回傳 HTTP 201 與新資料；Title 空白時回傳 HTTP 400。</returns>
     // HttpPost 表示這個 Action 處理 POST /todos。
     [HttpPost]
+    [ProducesResponseType(typeof(TodoItem), StatusCodes.Status201Created, "application/json")]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
     public async Task<ActionResult<TodoItem>> Create(CreateTodoRequest request)
     {
         if (!User.TryGetUserId(out int userId))
@@ -92,6 +97,10 @@ public sealed class TodosController : ControllerBase
     /// <returns>成功時回傳 HTTP 200；資料錯誤時回傳 400；找不到時回傳 404。</returns>
     // {id:int} 表示網址中的 id 必須是整數。
     [HttpPut("{id:int}")]
+    [ProducesResponseType(typeof(TodoItem), StatusCodes.Status200OK, "application/json")]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
     public async Task<ActionResult<TodoItem>> Update(int id, UpdateTodoRequest request)
     {
         if (!User.TryGetUserId(out int userId))
@@ -120,6 +129,9 @@ public sealed class TodosController : ControllerBase
     /// <returns>成功時回傳 HTTP 204；找不到時回傳 HTTP 404。</returns>
     // HttpDelete 表示這個 Action 處理 DELETE /todos/{id}。
     [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
     public async Task<IActionResult> Delete(int id)
     {
         if (!User.TryGetUserId(out int userId))

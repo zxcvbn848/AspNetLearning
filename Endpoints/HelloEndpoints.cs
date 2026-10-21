@@ -1,3 +1,5 @@
+using AspNetLearning.Contracts;
+
 // 宣告此檔案所屬的命名空間，用來組織相關程式碼並避免名稱衝突。
 namespace AspNetLearning.Endpoints;
 
@@ -27,9 +29,12 @@ public static class HelloEndpoints
             // $ 讓字串可以使用 {name} 插入變數值，這種寫法稱為字串插值。
             string message = $"Hello, {name}!";
 
-            // new { message } 建立匿名物件，ASP.NET Core 會自動將它轉換為 JSON。
+            // HelloResponse 明確描述回應格式，OpenAPI 才能產生可閱讀的 JSON Schema。
             // Results.Ok(...) 會建立 HTTP 200 OK 回應，表示請求處理成功。
-            return Results.Ok(new { message });
-        });
+            return Results.Ok(new HelloResponse(message));
+        })
+        .WithSummary("問候指定名稱")
+        .WithDescription("將網址中的 name 放進問候文字，回傳 JSON 物件。")
+        .Produces<HelloResponse>(StatusCodes.Status200OK);
     }
 }
