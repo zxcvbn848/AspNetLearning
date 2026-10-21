@@ -10,6 +10,7 @@ using AspNetLearning.Endpoints;
 // 匯入 TodoService 所在的命名空間，讓 Program.cs 可以註冊這個服務。
 using AspNetLearning.Services;
 using AspNetLearning.OpenApi;
+using AspNetLearning.Hubs;
 
 // 匯入 User 與 ASP.NET Core 內建的密碼雜湊服務。
 using AspNetLearning.Models;
@@ -32,6 +33,7 @@ var builder = WebApplication.CreateBuilder(args);
 // 將 Controller 相關服務註冊到 ASP.NET Core 的 Dependency Injection 容器。
 // AddControllers 讓應用程式能辨識繼承 ControllerBase 並標有路由 Attribute 的類別。
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 
 // 只在開發環境註冊可瀏覽的 API 文件，避免正式環境暴露內部路由與資料格式。
 if (builder.Environment.IsDevelopment())
@@ -90,6 +92,17 @@ builder.Services
 
         options.Events = new JwtBearerEvents
         {
+            // 瀏覽器的 WebSocket 無法設定 Authorization Header；只允許 Hub 從查詢字串讀取 JWT。
+            OnMessageReceived = context =>
+            {
+                if (context.Request.Path.StartsWithSegments("/hubs/todos") &&
+                    context.Request.Query.TryGetValue("access_token", out var token))
+                {
+                    context.Token = token;
+                }
+
+                return Task.CompletedTask;
+            },
             // JWT 簽章與有效期限通過後，再確認會員仍存在，避免已刪除帳號繼續使用舊 Token。
             OnTokenValidated = async context =>
             {
@@ -183,6 +196,11 @@ app.UseAuthorization();
 
 // 尋找 Controller 上的 Route、HttpGet、HttpPost、HttpPut 與 HttpDelete 等 Attribute，並建立對應路由。
 app.MapControllers();
+// 關閉開關時不提供 Hub 路由；一般 Todo API 仍可照常使用。
+if (builder.Configuration.GetValue("Features:TodoRealtime", true))
+{
+    app.MapHub<TodoHub>("/hubs/todos", options => options.CloseOnAuthenticationExpiration = true);
+}
 
 // 啟動應用程式，開始監聽並處理 HTTP 請求。
 app.Run();

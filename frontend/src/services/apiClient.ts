@@ -109,3 +109,22 @@ export function getAuthorizationHeaders(): Record<string, string> {
 
   return { Authorization: `Bearer ${accessToken}` }
 }
+
+/** Hub 每次建立或重建連線時取得 JWT；快到期時沿用既有的 Refresh 流程。 */
+export async function getRealtimeAccessToken(): Promise<string> {
+  const token = window.sessionStorage.getItem('accessToken')
+  if (!token) return ''
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]!.replace(/-/g, '+').replace(/_/g, '/'))) as { exp?: number }
+    if ((payload.exp ?? 0) * 1000 > Date.now() + 30_000) return token
+  } catch {
+    // 無法解析的 Token 交由既有 Refresh API 驗證工作階段。
+  }
+
+  const renewed = await refreshAccessToken(token)
+  if (!renewed && window.sessionStorage.getItem('accessToken') === token) {
+    window.dispatchEvent(new Event(authUnauthorizedEvent))
+  }
+  return renewed ?? ''
+}

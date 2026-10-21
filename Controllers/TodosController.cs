@@ -9,6 +9,8 @@ using AspNetLearning.Models;
 
 // 匯入負責 Todo CRUD 邏輯的 Service。
 using AspNetLearning.Services;
+using AspNetLearning.Hubs;
+using Microsoft.AspNetCore.SignalR;
 
 // 匯入 Authorize Attribute，讓整個 Controller 都必須通過 JWT 驗證。
 using Microsoft.AspNetCore.Authorization;
@@ -31,16 +33,19 @@ public sealed class TodosController : ControllerBase
 {
     // readonly 表示建構完成後，_todoService 不可以改指向另一個 TodoService 物件。
     private readonly TodoService _todoService;
+    private readonly IHubContext<TodoHub> _todoHub;
 
     /// <summary>
     /// 建立 TodosController，並接收 Dependency Injection 容器提供的 TodoService。
     /// </summary>
     /// <param name="todoService">負責管理待辦事項資料與 CRUD 邏輯的服務。</param>
+    /// <param name="todoHub">把變更通知傳給同一會員其他分頁的 SignalR 服務。</param>
     // 這個方法與類別同名且沒有回傳型別，因此是 Constructor（建構式）。
-    public TodosController(TodoService todoService)
+    public TodosController(TodoService todoService, IHubContext<TodoHub> todoHub)
     {
         // 將傳入的 todoService 保存到欄位，讓其他 Action 可以使用同一個服務。
         _todoService = todoService;
+        _todoHub = todoHub;
     }
 
     /// <summary>
@@ -84,6 +89,7 @@ public sealed class TodosController : ControllerBase
 
         // Controller 將已驗證的輸入交給 Service，由 Service 建立並保存 TodoItem。
         TodoItem todoItem = await _todoService.CreateAsync(userId, request.Title);
+        await _todoHub.Clients.Group(TodoHub.GroupName(userId)).SendAsync("TodosChanged");
 
         // Created 會建立 HTTP 201 回應，並在 Location Header 提供新資源網址。
         return Created($"/todos/{todoItem.Id}", todoItem);
@@ -118,6 +124,8 @@ public sealed class TodosController : ControllerBase
             return Problem(statusCode: StatusCodes.Status404NotFound, detail: $"找不到 Id 為 {id} 的待辦事項。");
         }
 
+        await _todoHub.Clients.Group(TodoHub.GroupName(userId)).SendAsync("TodosChanged");
+
         // Ok 會建立 HTTP 200 回應，並回傳更新後的資料。
         return Ok(todoItem);
     }
@@ -146,6 +154,8 @@ public sealed class TodosController : ControllerBase
         {
             return Problem(statusCode: StatusCodes.Status404NotFound, detail: $"找不到 Id 為 {id} 的待辦事項。");
         }
+
+        await _todoHub.Clients.Group(TodoHub.GroupName(userId)).SendAsync("TodosChanged");
 
         // NoContent 會建立沒有 Response Body 的 HTTP 204 回應。
         return NoContent();
