@@ -9,6 +9,7 @@ using AspNetLearning.Endpoints;
 
 // 匯入 TodoService 所在的命名空間，讓 Program.cs 可以註冊這個服務。
 using AspNetLearning.Services;
+using AspNetLearning.OpenApi;
 
 // 匯入 User 與 ASP.NET Core 內建的密碼雜湊服務。
 using AspNetLearning.Models;
@@ -22,6 +23,7 @@ using System.Text;
 
 // 匯入 Entity Framework Core，讓程式可以使用 UseNpgsql 與 Migrate。
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 
 // 建立 WebApplicationBuilder，負責載入設定、註冊服務及準備 ASP.NET Core 應用程式。
 // args 代表啟動程式時傳入的命令列參數。
@@ -30,6 +32,12 @@ var builder = WebApplication.CreateBuilder(args);
 // 將 Controller 相關服務註冊到 ASP.NET Core 的 Dependency Injection 容器。
 // AddControllers 讓應用程式能辨識繼承 ControllerBase 並標有路由 Attribute 的類別。
 builder.Services.AddControllers();
+
+// 只在開發環境註冊可瀏覽的 API 文件，避免正式環境暴露內部路由與資料格式。
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddLearningOpenApi();
+}
 
 // 註冊 RFC 9457 Problem Details，統一驗證錯誤、404 與未預期例外的 JSON 格式。
 builder.Services.AddProblemDetails(options =>
@@ -147,18 +155,26 @@ app.UseStatusCodePages();
 
 // 註冊 HTTP GET 路由。
 // "/" 代表網站根路徑，() => "Hello World!" 是收到請求後執行的 Lambda 運算式。
-app.MapGet("/", () => "Hello World!");
+app.MapGet("/", () => "Hello World!")
+    .WithSummary("確認 API 已啟動");
 
 // 載入第一階段的問候 API 路由。
 app.MapHelloEndpoints();
 
 if (app.Environment.IsDevelopment())
 {
+    // OpenAPI JSON 是機器可讀規格；Scalar 將同一份規格呈現為可試呼叫的頁面。
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+
     // 只在開發環境提供測試端點，用來觀察全域例外處理與 Trace Id。
     app.MapGet("/debug/error", () =>
     {
         throw new InvalidOperationException("這是開發環境的預期測試例外。");
-    });
+    })
+    .WithSummary("觸發開發環境測試錯誤")
+    .WithDescription("刻意觸發 HTTP 500，用來觀察 Problem Details 與 Trace Id。")
+    .ProducesProblem(StatusCodes.Status500InternalServerError);
 }
 
 // 驗證 Authorization Header 中的 JWT，再執行端點設定的授權規則。
