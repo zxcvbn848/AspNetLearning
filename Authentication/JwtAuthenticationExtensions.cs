@@ -10,6 +10,9 @@ namespace AspNetLearning.Authentication;
 /// <summary>集中註冊 JWT 驗證服務，讓 Program.cs 保留應用程式組裝流程。</summary>
 public static class JwtAuthenticationExtensions
 {
+    // 只允許已列出的 Hub 從查詢字串取得 JWT；新增 Hub 時在這裡加入路徑。
+    private static readonly PathString[] HubPaths = ["/hubs/todos", "/hubs/chat"];
+
     /// <summary>驗證 JWT 簽章、有效期限與所屬會員，並允許 SignalR Hub 取得瀏覽器 Token。</summary>
     public static void AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
@@ -42,11 +45,10 @@ public static class JwtAuthenticationExtensions
 
                 options.Events = new JwtBearerEvents
                 {
-                    // 瀏覽器的 WebSocket 無法設定 Authorization Header；只允許這兩個 Hub 從查詢字串讀取 JWT。
+                    // 瀏覽器的 WebSocket 無法設定 Authorization Header；只允許清單中的 Hub 從查詢字串讀取 JWT。
                     OnMessageReceived = context =>
                     {
-                        if ((context.Request.Path.StartsWithSegments("/hubs/todos") ||
-                             context.Request.Path.StartsWithSegments("/hubs/chat")) &&
+                        if (HubPaths.Any(context.Request.Path.StartsWithSegments) &&
                             context.Request.Query.TryGetValue("access_token", out var token))
                         {
                             context.Token = token;
