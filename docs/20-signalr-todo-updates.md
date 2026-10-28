@@ -12,7 +12,7 @@
 
 後端的 `TodoHub` 標有 `[Authorize]`，連線必須帶 JWT。`OnConnectedAsync` 從已驗證的會員身分讀出 Id，將連線加入 `todos:<會員 Id>` 群組。`TodosController` 只有在資料庫新增、更新或刪除成功後，才透過 `IHubContext<TodoHub>` 通知該會員的群組。因此其他會員不會收到通知，原有 Todo API 的授權仍是讀取資料的最後一道檢查。
 
-瀏覽器的 WebSocket 握手無法自行設定 `Authorization` Header；SignalR JavaScript Client 在必要時把 JWT 放進 `access_token` 查詢參數。`Authentication/JwtAuthenticationExtensions.cs` 只允許 `/hubs/todos` 路徑讀取這個參數，其他 API 仍使用 Header。正式環境應使用 HTTPS，並避免把含 `access_token` 的完整 URL 寫入存取紀錄。
+瀏覽器的 WebSocket 握手無法自行設定 `Authorization` Header；SignalR JavaScript Client 在必要時把 JWT 放進 `access_token` 查詢參數。`Authentication/JwtAuthenticationExtensions.cs` 只允許 `/hubs/todos` 與 `/hubs/chat` 讀取這個參數，其他 API 仍使用 Header。正式環境應使用 HTTPS，並避免把含 `access_token` 的完整 URL 寫入存取紀錄。
 
 ## 斷線、重連與 Token
 

@@ -8,7 +8,7 @@
 
 `TokenValidationParameters` 檢查 Issuer、Audience、簽章和到期時間；`ClockSkew = TimeSpan.Zero` 讓到期時間不額外寬限。`MapInboundClaims = false` 保留原本的 `sub` Claim 名稱。這些規則沒有因為移動檔案而改變。
 
-`JwtBearerEvents` 處理兩件額外的事：`OnMessageReceived` 只允許 SignalR Hub `/hubs/todos` 從 `access_token` 查詢參數取得 JWT；`OnTokenValidated` 在簽章等檢查通過後，確認 Token 中的會員 Id 有效、資料庫中仍有這位會員。一般 API 仍使用 `Authorization: Bearer ...` Header。
+`JwtBearerEvents` 處理兩件額外的事：`OnMessageReceived` 只允許 SignalR Hub `/hubs/todos` 與 `/hubs/chat` 從 `access_token` 查詢參數取得 JWT；`OnTokenValidated` 在簽章等檢查通過後，確認 Token 中的會員 Id 有效、資料庫中仍有這位會員。一般 API 仍使用 `Authorization: Bearer ...` Header。
 
 ## 與其他檔案的分工
 

@@ -42,10 +42,11 @@ public static class JwtAuthenticationExtensions
 
                 options.Events = new JwtBearerEvents
                 {
-                    // 瀏覽器的 WebSocket 無法設定 Authorization Header；只允許 Hub 從查詢字串讀取 JWT。
+                    // 瀏覽器的 WebSocket 無法設定 Authorization Header；只允許這兩個 Hub 從查詢字串讀取 JWT。
                     OnMessageReceived = context =>
                     {
-                        if (context.Request.Path.StartsWithSegments("/hubs/todos") &&
+                        if ((context.Request.Path.StartsWithSegments("/hubs/todos") ||
+                             context.Request.Path.StartsWithSegments("/hubs/chat")) &&
                             context.Request.Query.TryGetValue("access_token", out var token))
                         {
                             context.Token = token;

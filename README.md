@@ -33,10 +33,12 @@ AspNetLearning/
 ├── Extensions/
 │   └── ClaimsPrincipalExtensions.cs
 ├── Hubs/
-│   └── TodoHub.cs
+│   ├── TodoHub.cs
+│   └── ChatHub.cs
 ├── frontend/
 │   ├── src/
 │   │   ├── components/CurrentUserPanel.vue
+│   │   ├── components/ChatPanel.vue
 │   │   ├── components/ErrorHandlingPanel.vue
 │   │   ├── components/LoginForm.vue
 │   │   ├── components/RegisterForm.vue
@@ -53,6 +55,7 @@ AspNetLearning/
 │   ├── package.json
 │   └── vite.config.ts
 ├── Models/
+│   ├── ChatMessage.cs
 │   ├── TodoItem.cs
 │   ├── RefreshToken.cs
 │   └── User.cs
@@ -85,6 +88,7 @@ AspNetLearning/
 │   ├── 19-openapi-reference.md
 │   ├── 20-signalr-todo-updates.md
 │   ├── 21-jwt-configuration.md
+│   ├── 22-member-chat.md
 │   └── development-roadmap.md
 ├── postman/
 │   ├── AspNetLearning.postman_collection.json
@@ -258,6 +262,8 @@ http://localhost:8180
 
 登入後在兩個前端分頁開啟「待辦事項」，於其中一頁新增、編輯或刪除，另一頁會透過 SignalR 自動更新。程式碼閱讀順序與連線說明請看 [第二十課：SignalR 即時通知](docs/20-signalr-todo-updates.md)。
 可在專案根目錄的 `.env` 設定 `TODO_REALTIME_ENABLED=false` 停用，再重建 app 與 frontend 容器；預設為啟用。
+
+登入後可在左側選擇「聊天室」，與其他會員即時收發訊息，重新進入仍能看到最近 50 則。這是 SignalR Hub 方法，不會列在 OpenAPI 的一般 HTTP 路由清單；實作與測試方式見 [第二十二課：會員聊天室](docs/22-member-chat.md)。
 
 第八階段的 Vue 與 TypeScript 說明請閱讀 `docs/08-vue-typescript-frontend.md`。
 

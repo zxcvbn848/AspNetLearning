@@ -26,6 +26,9 @@ public sealed class AppDbContext : DbContext
     /// <summary>登入工作階段使用的 Refresh Token 雜湊。</summary>
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
+    /// <summary>公開聊天室的訊息紀錄。</summary>
+    public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+
     /// <summary>
     /// 設定 TodoItem 與 PostgreSQL 資料表的對應規則及初始資料。
     /// </summary>
@@ -98,6 +101,16 @@ public sealed class AppDbContext : DbContext
             entity.HasIndex(token => token.TokenHash).IsUnique();
             entity.HasIndex(token => token.FamilyId);
             entity.HasOne(token => token.User).WithMany().HasForeignKey(token => token.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ChatMessage>(entity =>
+        {
+            entity.ToTable("chat_messages");
+            entity.HasKey(message => message.Id);
+            entity.Property(message => message.Content).IsRequired().HasMaxLength(500);
+            entity.Property(message => message.CreatedAtUtc).IsRequired();
+            entity.HasOne<User>().WithMany().HasForeignKey(message => message.UserId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(message => message.CreatedAtUtc);
         });
     }
 }
