@@ -285,6 +285,8 @@ feat/* → dev → main
 - 功能分支透過 Pull Request 合併至 `dev`。
 - 測試完成後，再透過 Pull Request 將 `dev` 合併至 `main`。
 
+PR 指向 `dev` 或 `main` 時會自動執行建置與測試；檢查內容與結果位置見 [第二十三課：GitHub Actions CI](docs/23-ci-checks.md)。
+
 ## 學習課程
 
 1. [第一課：讀懂問候 API](docs/01-hello-api.md)
