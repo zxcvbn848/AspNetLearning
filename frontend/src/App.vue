@@ -6,6 +6,7 @@ import ErrorHandlingPanel from './components/ErrorHandlingPanel.vue'
 import LoginForm from './components/LoginForm.vue'
 import RegisterForm from './components/RegisterForm.vue'
 import TodoListItem from './components/TodoListItem.vue'
+import ChatPanel from './components/ChatPanel.vue'
 import { logoutUser } from './services/authApi'
 import { authUnauthorizedEvent } from './services/apiClient'
 import { createTodoItem, deleteTodoItem, getTodoItems, updateTodoItem } from './services/todoApi'
@@ -14,7 +15,7 @@ import type { HubConnection } from '@microsoft/signalr'
 import type { TodoItem } from './types/todo'
 
 // 使用字串聯集限制頁面名稱，避免傳入拼錯或不存在的頁面。
-type DashboardPage = 'member' | 'todos' | 'errors' | 'status'
+type DashboardPage = 'member' | 'todos' | 'chat' | 'errors' | 'status'
 type AuthForm = 'login' | 'register'
 
 // 導覽項目的資料結構，讓按鈕可以用同一份陣列產生。
@@ -28,6 +29,7 @@ interface NavigationItem {
 const navigationItems: NavigationItem[] = [
   { id: 'member', label: '會員', description: '註冊、登入與會員資料' },
   { id: 'todos', label: '待辦事項', description: '管理自己的 Todo' },
+  { id: 'chat', label: '聊天室', description: '與其他會員即時聊天' },
   { id: 'errors', label: '錯誤測試', description: 'Problem Details' },
   { id: 'status', label: 'API 狀態', description: '連線與登入狀態' },
 ]
@@ -439,6 +441,12 @@ onBeforeUnmount(() => {
               {{ hasAccessToken ? '目前沒有待辦事項。' : '請先到會員頁登入。' }}
             </p>
           </section>
+        </section>
+
+        <ChatPanel v-else-if="activePage === 'chat' && hasAccessToken" />
+        <section v-else-if="activePage === 'chat'" class="empty-page">
+          <h2>公開聊天室</h2>
+          <p>請先到會員頁登入，再進入聊天室。</p>
         </section>
 
         <!-- 例外測試端點只存在於開發環境；正式建置改顯示說明文字。 -->

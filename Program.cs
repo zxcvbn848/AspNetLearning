@@ -137,5 +137,8 @@ if (builder.Configuration.GetValue("Features:TodoRealtime", true))
     app.MapHub<TodoHub>("/hubs/todos", options => options.CloseOnAuthenticationExpiration = true);
 }
 
+// 公開聊天室與 Todo 即時通知各有獨立的 Hub，兩者都必須先通過 JWT 驗證。
+app.MapHub<ChatHub>("/hubs/chat", options => options.CloseOnAuthenticationExpiration = true);
+
 // 啟動應用程式，開始監聽並處理 HTTP 請求。
 app.Run();

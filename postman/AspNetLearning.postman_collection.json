@@ -277,7 +277,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"email\": \"{{registerEmail}}\",\n  \"password\": \"Learning123!\"\n}",
+          "raw": "{\n  \"email\": \"{{registerEmail}}\",\n  \"password\": \"Learning123!\",\n  \"nickname\": \"Andy\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -514,6 +514,36 @@
           }
         }
       ],
+      "response": []
+    },
+    {
+      "name": "修改聊天室暱稱",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nickname\": \"Andy\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/me/nickname",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "me", "nickname"]
+        },
+        "description": "登入後修改公開暱稱；聊天室會顯示此暱稱。"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": ["pm.test('修改暱稱回傳 200', function () { pm.response.to.have.status(200); });"]
+        }
+      }],
       "response": []
     },
     {

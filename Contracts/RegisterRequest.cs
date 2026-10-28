@@ -13,6 +13,10 @@ public sealed class RegisterRequest
     [MaxLength(254, ErrorMessage = "Email 最多只能有 254 個字元。")]
     public string Email { get; init; } = string.Empty;
 
+    /// <summary>公開顯示的暱稱；可以在註冊後設定。</summary>
+    [StringLength(30, MinimumLength = 2, ErrorMessage = "暱稱長度須介於 2 到 30 個字元。")]
+    public string? Nickname { get; init; }
+
     /// <summary>會員的原始密碼，只用來產生雜湊，不會寫入資料庫。</summary>
     [Required(ErrorMessage = "密碼為必填欄位。")]
     [MinLength(8, ErrorMessage = "密碼至少需要 8 個字元。")]
