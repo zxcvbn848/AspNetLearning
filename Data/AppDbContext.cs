@@ -82,6 +82,8 @@ public sealed class AppDbContext : DbContext
                 .IsRequired()
                 .HasMaxLength(254);
 
+            entity.Property(user => user.Nickname).HasMaxLength(30);
+
             // Unique Index 讓 PostgreSQL 從資料庫層阻止重複 Email。
             entity.HasIndex(user => user.Email)
                 .IsUnique();

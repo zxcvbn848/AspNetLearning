@@ -4,11 +4,11 @@ import { HubConnectionBuilder } from '@microsoft/signalr'
 const baseUrl = process.env.API_BASE_URL ?? 'http://app:8080'
 const unique = `${Date.now()}-${Math.random().toString(36).slice(2)}`
 
-async function register(email) {
+async function register(email, nickname) {
   const password = 'Learning123!'
   const registered = await fetch(`${baseUrl}/auth/register`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, nickname }),
   })
   assert.equal(registered.status, 201)
   const login = await fetch(`${baseUrl}/auth/login`, {
@@ -37,8 +37,15 @@ async function waitFor(received, count) {
 
 const unauthorized = await fetch(`${baseUrl}/hubs/chat/negotiate?negotiateVersion=1`, { method: 'POST' })
 assert.equal(unauthorized.status, 401)
-const firstToken = await register(`chat-first-${unique}@example.com`)
+const firstToken = await register(`chat-first-${unique}@example.com`, '小明')
 const secondToken = await register(`chat-second-${unique}@example.com`)
+const renamed = await fetch(`${baseUrl}/auth/me/nickname`, {
+  method: 'PUT',
+  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${secondToken}` },
+  body: JSON.stringify({ nickname: '  小華  ' }),
+})
+assert.equal(renamed.status, 200)
+assert.equal((await renamed.json()).nickname, '小華')
 const firstReceived = []
 const secondReceived = []
 const first = connect(firstToken, firstReceived)
@@ -55,11 +62,17 @@ try {
   await first.invoke('SendMessage', text)
   await Promise.all([waitFor(firstReceived, 1), waitFor(secondReceived, 1)])
   assert.equal(firstReceived[0].content, text.trim())
+  assert.equal(firstReceived[0].nickname, '小明')
   assert.equal(secondReceived[0].id, firstReceived[0].id)
   assert.ok(!('email' in firstReceived[0]))
 
+  await second.invoke('SendMessage', `暱稱測試 ${unique}`)
+  await Promise.all([waitFor(firstReceived, 2), waitFor(secondReceived, 2)])
+  assert.equal(firstReceived[1].nickname, '小華')
+
   const history = await second.invoke('GetRecentMessages')
   assert.ok(history.some(message => message.id === firstReceived[0].id))
+  assert.equal(history.find(message => message.id === firstReceived[0].id).nickname, '小明')
   await second.stop()
   const reconnected = connect(secondToken, [])
   await reconnected.start()

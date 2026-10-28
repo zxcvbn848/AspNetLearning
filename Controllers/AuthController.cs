@@ -37,7 +37,10 @@ public sealed class AuthController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
     public async Task<ActionResult<UserResponse>> Register(RegisterRequest request)
     {
-        User? user = await _userService.RegisterAsync(request.Email, request.Password);
+        if (request.Nickname is not null && request.Nickname.Trim().Length is < 2 or > 30)
+            return BadRequest(new { message = "暱稱長度須介於 2 到 30 個字元。" });
+
+        User? user = await _userService.RegisterAsync(request.Email, request.Password, request.Nickname);
 
         if (user is null)
         {
@@ -139,5 +142,19 @@ public sealed class AuthController : ControllerBase
         }
 
         return Ok(UserResponse.FromUser(user));
+    }
+
+    /// <summary>修改目前登入會員的公開暱稱。</summary>
+    [Authorize]
+    [HttpPut("me/nickname")]
+    [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK, "application/json")]
+    public async Task<ActionResult<UserResponse>> UpdateNickname(UpdateNicknameRequest request)
+    {
+        if (!User.TryGetUserId(out int userId)) return Unauthorized();
+        if (request.Nickname.Trim().Length is < 2 or > 30)
+            return BadRequest(new { message = "暱稱長度須介於 2 到 30 個字元。" });
+
+        User? user = await _userService.UpdateNicknameAsync(userId, request.Nickname);
+        return user is null ? Unauthorized() : Ok(UserResponse.FromUser(user));
     }
 }

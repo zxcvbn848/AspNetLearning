@@ -2,13 +2,23 @@ import type { LoginResponse, UserResponse } from '../types/user'
 import { request, waitForRefresh } from './apiClient'
 
 /** 呼叫 POST /auth/register 建立會員。 */
-export async function registerUser(email: string, password: string): Promise<UserResponse> {
+export async function registerUser(email: string, password: string, nickname?: string): Promise<UserResponse> {
   const response = await request('/auth/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, nickname }),
   })
 
+  return response.json() as Promise<UserResponse>
+}
+
+/** 修改目前登入會員的公開暱稱。 */
+export async function updateNickname(accessToken: string, nickname: string): Promise<UserResponse> {
+  const response = await request('/auth/me/nickname', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ nickname }),
+  })
   return response.json() as Promise<UserResponse>
 }
 

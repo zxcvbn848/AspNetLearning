@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { registerUser } from '../services/authApi'
 
 const email = ref('')
+const nickname = ref('')
 const password = ref('')
 const passwordConfirmation = ref('')
 const message = ref('')
@@ -20,8 +21,9 @@ async function submitRegistration(): Promise<void> {
   showMessage('')
 
   try {
-    const user = await registerUser(email.value.trim(), password.value)
+    const user = await registerUser(email.value.trim(), password.value, nickname.value.trim() || undefined)
     email.value = ''
+    nickname.value = ''
     password.value = ''
     passwordConfirmation.value = ''
     showMessage(`會員 ${user.email} 註冊成功，會員編號為 ${user.id}。`, true)
@@ -51,6 +53,10 @@ function showMessage(text: string, success = false): void {
 
     <!-- submit.prevent 呼叫 Vue 函式，避免瀏覽器重新整理整頁。 -->
     <form class="auth-form register-form" @submit.prevent="submitRegistration">
+      <div class="form-field">
+        <label for="register-nickname">暱稱（聊天室顯示，可稍後設定）</label>
+        <input id="register-nickname" v-model="nickname" minlength="2" maxlength="30" placeholder="例如：Andy">
+      </div>
       <div class="form-field email-field">
         <label for="register-email">Email</label>
         <input

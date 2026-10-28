@@ -23,7 +23,7 @@ public sealed class UserService
     /// <summary>
     /// 建立會員；Email 已存在時回傳 null。
     /// </summary>
-    public async Task<User?> RegisterAsync(string email, string password)
+    public async Task<User?> RegisterAsync(string email, string password, string? nickname = null)
     {
         // 正規化讓 Andy@example.com 與 andy@example.com 被視為同一個帳號。
         string normalizedEmail = email.Trim().ToLowerInvariant();
@@ -36,6 +36,7 @@ public sealed class UserService
         User user = new()
         {
             Email = normalizedEmail,
+            Nickname = nickname?.Trim(),
             // PasswordHash 先給暫時值，下一行再使用完整 User 產生雜湊。
             PasswordHash = string.Empty,
             CreatedAtUtc = DateTime.UtcNow
@@ -101,5 +102,15 @@ public sealed class UserService
         return await _dbContext.Users
             .AsNoTracking()
             .SingleOrDefaultAsync(user => user.Id == id);
+    }
+
+    /// <summary>更新目前會員的公開暱稱。</summary>
+    public async Task<User?> UpdateNicknameAsync(int id, string nickname)
+    {
+        User? user = await _dbContext.Users.FindAsync(id);
+        if (user is null) return null;
+        user.Nickname = nickname.Trim();
+        await _dbContext.SaveChangesAsync();
+        return user;
     }
 }

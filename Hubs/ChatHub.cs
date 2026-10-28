@@ -1,4 +1,5 @@
 using AspNetLearning.Data;
+using AspNetLearning.Contracts;
 using AspNetLearning.Extensions;
 using AspNetLearning.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -21,11 +22,13 @@ public sealed class ChatHub(AppDbContext dbContext) : Hub
     }
 
     /// <summary>讀取最近 50 則訊息，供初次進入與重連後補齊畫面。</summary>
-    public async Task<List<ChatMessage>> GetRecentMessages()
+    public async Task<List<ChatMessageResponse>> GetRecentMessages()
     {
         // shortcut: 只讀取最近 50 則，若需搜尋舊訊息再加入分頁查詢。
-        List<ChatMessage> recent = await dbContext.ChatMessages.AsNoTracking()
-            .OrderByDescending(message => message.Id)
+        List<ChatMessageResponse> recent = await (from message in dbContext.ChatMessages.AsNoTracking()
+            join user in dbContext.Users.AsNoTracking() on message.UserId equals user.Id
+            orderby message.Id descending
+            select new ChatMessageResponse(message.Id, message.UserId, user.Nickname, message.Content, message.CreatedAtUtc))
             .Take(50)
             .ToListAsync();
         recent.Reverse();
@@ -54,6 +57,9 @@ public sealed class ChatHub(AppDbContext dbContext) : Hub
         };
         dbContext.ChatMessages.Add(message);
         await dbContext.SaveChangesAsync();
-        await Clients.Group(Lobby).SendAsync("MessageReceived", message);
+        string? nickname = await dbContext.Users.Where(user => user.Id == userId)
+            .Select(user => user.Nickname).SingleAsync();
+        await Clients.Group(Lobby).SendAsync("MessageReceived",
+            new ChatMessageResponse(message.Id, userId, nickname, text, message.CreatedAtUtc));
     }
 }

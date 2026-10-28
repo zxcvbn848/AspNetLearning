@@ -6,6 +6,7 @@ import { getRealtimeAccessToken } from '../services/apiClient'
 interface ChatMessage {
   id: number
   userId: number
+  nickname: string | null
   content: string
   createdAtUtc: string
 }
@@ -108,7 +109,7 @@ onBeforeUnmount(() => {
     <ol ref="messageList" class="chat-messages" role="log" aria-live="polite" aria-label="聊天室訊息">
       <li v-for="message in messages" :key="message.id" class="chat-message">
         <div class="chat-meta">
-          <strong>會員 #{{ message.userId }}</strong>
+          <strong>{{ message.nickname || `會員 #${message.userId}` }}</strong>
           <time :datetime="message.createdAtUtc">{{ new Date(message.createdAtUtc).toLocaleString('zh-TW') }}</time>
         </div>
         <p>{{ message.content }}</p>
