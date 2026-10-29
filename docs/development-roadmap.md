@@ -33,6 +33,10 @@
 
 - [x] 建立會員公開聊天室，練習 SignalR 的雙向訊息、連線加入大廳與斷線離開、PostgreSQL 訊息保存及 Vue 即時顯示。
 
+## 待辦：Postman 練習 SignalR
+
+- [ ] 另建 WebSocket Collection，示範 SignalR 連線協商、Hub 握手、JWT 授權與 `SendMessage` 訊息格式；保留現有 HTTP Collection，並附逐步操作說明。
+
 ## 待辦：整理應用程式入口
 
 - [x] 將 `Program.cs` 中較長的 JWT 註冊與驗證設定移到獨立檔案，讓入口保留服務註冊、Middleware 順序與路由概覽；保持現有授權行為不變。
