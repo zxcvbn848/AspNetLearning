@@ -297,6 +297,8 @@ PR 指向 `dev` 或 `main` 時會自動執行建置與測試；檢查內容與�
 
 ## 學習課程
 
+快速複習：[ASP.NET Core 名詞與概念速查](docs/aspnet-core-glossary.md)，包含 PHP／Laravel、Go 的相近概念對照。
+
 1. [第一課：讀懂問候 API](docs/01-hello-api.md)
 2. [第二課：讀懂 Class 與 List](docs/02-todo-list.md)
 3. [第三課：使用 POST 建立待辦事項](docs/03-create-todo.md)
