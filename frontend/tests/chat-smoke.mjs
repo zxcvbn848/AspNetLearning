@@ -81,6 +81,22 @@ try {
   } finally {
     await reconnected.stop()
   }
+  // 建立超過一頁的資料，驗證游標分頁不重複且保留由舊到新的順序。
+  for (let index = 0; index < 51; index++) {
+    await first.invoke('SendMessage', `分頁測試 ${unique} ${index}`)
+  }
+  const latest = await first.invoke('GetRecentMessages')
+  assert.equal(latest.length, 50)
+  const older = await first.invoke('GetOlderMessages', latest[0].id)
+  assert.ok(older.length > 0 && older.length <= 50)
+  assert.ok(older.every(message => message.id < latest[0].id))
+  assert.ok(older.some(message => message.content === `分頁測試 ${unique} 0`))
+  assert.ok(older.every((message, index) => index === 0 || older[index - 1].id < message.id))
+  assert.deepEqual(await first.invoke('GetOlderMessages', 1), [])
+  await assert.rejects(first.invoke('GetOlderMessages', 0))
+  // 新訊息不會改變既定游標之前的資料。
+  await first.invoke('SendMessage', `分頁期間的新訊息 ${unique}`)
+  assert.deepEqual(await first.invoke('GetOlderMessages', latest[0].id), older)
   console.log('PASS: 未登入拒絕、訊息驗證、跨會員廣播與資料庫歷史紀錄')
 } finally {
   await Promise.all([first.stop(), second.stop()])
