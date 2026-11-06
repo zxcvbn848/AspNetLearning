@@ -244,7 +244,7 @@ JSON 回到 Vue，Vue 更新畫面
 在專案根目錄執行：
 
 ```sh
-docker compose up -d
+docker compose up -d --build
 ```
 
 開啟 Vue 前端：
@@ -329,3 +329,5 @@ name = Andy
 Production 範本的 `baseUrl` 刻意留空，避免尚未部署時誤送請求。密碼、Token 與其他機密資料不可提交到 GitHub，應在 Postman 中設定為敏感值。
 
 登入後可依序執行「第十八課：更新 Access Token」與「第十八課：登出並撤銷 Refresh Token」。Postman 使用自己的 Cookie Jar 保存 HttpOnly Cookie；更新請求會把新 JWT 寫回 `accessToken` 變數。詳見 [Refresh Token 學習文件](docs/18-refresh-token.md)。
+
+依賴與容器安全檢查、剩餘漏洞及交接紀錄請見 [安全檢查紀錄](docs/dependency-security.md)。

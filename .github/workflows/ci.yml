@@ -30,12 +30,13 @@ jobs:
       - name: Build and test Vue
         working-directory: frontend
         run: |
+          npm install --global npm@11.21.1
           npm ci
           npm run build
           npm test
 
       - name: Start ASP.NET Core and PostgreSQL
-        run: docker compose up -d app
+        run: docker compose up -d --build app
 
       - name: Wait for API
         run: |
