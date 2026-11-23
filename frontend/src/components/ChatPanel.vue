@@ -2,6 +2,7 @@
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { HubConnectionBuilder, HubConnectionState, type HubConnection } from '@microsoft/signalr'
 import { getRealtimeAccessToken } from '../services/apiClient'
+import { useChatReadingState } from '../composables/useChatReadingState'
 
 interface ChatMessage {
   id: number
@@ -19,6 +20,7 @@ const sending = ref(false)
 const loadingOlder = ref(false)
 const hasMore = ref(false)
 const messageList = ref<HTMLElement | null>(null)
+const { isAtLatest, unreadCount, updatePosition, recordNewMessages } = useChatReadingState()
 let connection: HubConnection | null = null
 let disposed = false
 
@@ -28,6 +30,12 @@ async function addMessages(incoming: ChatMessage[], prepend = false): Promise<vo
   const oldHeight = list?.scrollHeight ?? 0
   const oldTop = list?.scrollTop ?? 0
   const atBottom = !list || oldHeight - oldTop - list.clientHeight < 40
+  if (list) updatePosition(list)
+  const latestId = messages.value.at(-1)?.id
+  // 初次歷史與往前分頁不算新訊息；重連補回的較新訊息也納入提示。
+  if (!prepend && latestId !== undefined) {
+    recordNewMessages(incoming.filter(message => message.id > latestId).map(message => message.id))
+  }
   const byId = new Map(messages.value.map(message => [message.id, message]))
   for (const message of incoming) byId.set(message.id, message)
   messages.value = [...byId.values()].sort((a, b) => a.id - b.id)
@@ -36,6 +44,19 @@ async function addMessages(incoming: ChatMessage[], prepend = false): Promise<vo
   // 往前補資料時保留閱讀位置；閱讀舊訊息時收到廣播也不強制捲到底。
   if (prepend) list.scrollTop = oldTop + list.scrollHeight - oldHeight
   else if (atBottom) list.scrollTop = list.scrollHeight
+  updatePosition(list)
+}
+
+/** 點擊按鈕或手動捲到底時，都清除本分頁的新訊息提示。 */
+function returnToLatest(): void {
+  const list = messageList.value
+  if (!list) return
+  list.scrollTop = list.scrollHeight
+  updatePosition(list)
+}
+
+function onMessageScroll(): void {
+  if (messageList.value) updatePosition(messageList.value)
 }
 
 /** 進入聊天室與重連後，從資料庫補回最近 50 則訊息。 */
@@ -141,7 +162,7 @@ onBeforeUnmount(() => {
       {{ loadingOlder ? '載入中…' : '載入更早訊息' }}
     </button>
     <p v-else-if="messages.length" role="status">已載入所有歷史訊息。</p>
-    <ol ref="messageList" class="chat-messages" role="log" aria-live="polite" aria-label="聊天室訊息">
+    <ol ref="messageList" class="chat-messages" role="log" aria-live="polite" aria-label="聊天室訊息" @scroll="onMessageScroll">
       <li v-for="message in messages" :key="message.id" class="chat-message">
         <div class="chat-meta">
           <strong>{{ message.nickname || `會員 #${message.userId}` }}</strong>
@@ -150,6 +171,10 @@ onBeforeUnmount(() => {
         <p>{{ message.content }}</p>
       </li>
     </ol>
+    <div class="chat-reading-status">
+      <span role="status" aria-live="polite">{{ unreadCount ? `有 ${unreadCount} 則新訊息` : '' }}</span>
+      <button v-if="!isAtLatest" type="button" class="secondary-button" @click="returnToLatest">回到最新 ↓</button>
+    </div>
     <p v-if="!messages.length" class="empty-state">還沒有訊息，傳送第一則吧。</p>
 
     <form class="chat-form" @submit.prevent="sendMessage">
@@ -168,6 +193,8 @@ onBeforeUnmount(() => {
 .chat-status button { padding: 8px 12px; color: var(--text); background: var(--secondary); }
 .chat-messages { height: 380px; overflow-y: auto; margin: 0; padding: 12px; list-style: none; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
 .chat-message { padding: 10px 4px; overflow-wrap: anywhere; }
+.chat-reading-status { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 44px; color: var(--muted); }
+.chat-reading-status button { padding: 8px 12px; color: var(--text); background: var(--secondary); }
 .chat-message + .chat-message { border-top: 1px solid var(--border); }
 .chat-message p { margin: 6px 0 0; white-space: pre-wrap; }
 .chat-meta { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: .85rem; }

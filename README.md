@@ -299,6 +299,8 @@ PR 指向 `dev` 或 `main` 時會自動執行建置與測試；檢查內容與�
 
 聊天室延伸：[第二十四課：歷史訊息分頁](docs/24-chat-history-pagination.md)。
 
+閱讀歷史時的新訊息提示：[第二十五課：新訊息提示與回到最新](docs/25-chat-new-message-indicator.md)。
+
 快速複習：[ASP.NET Core 名詞與概念速查](docs/aspnet-core-glossary.md)，包含 PHP／Laravel、Go 的相近概念對照。
 
 1. [第一課：讀懂問候 API](docs/01-hello-api.md)
