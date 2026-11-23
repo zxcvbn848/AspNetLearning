@@ -25,24 +25,24 @@ let connection: HubConnection | null = null
 let disposed = false
 
 /** 合併歷史與即時訊息；重連時同一則可能出現兩次，所以以 Id 去重。 */
-async function addMessages(incoming: ChatMessage[], prepend = false): Promise<void> {
+async function addMessages(incoming: ChatMessage[], source: 'live' | 'recent' | 'older'): Promise<void> {
   const list = messageList.value
   const oldHeight = list?.scrollHeight ?? 0
   const oldTop = list?.scrollTop ?? 0
-  const atBottom = !list || oldHeight - oldTop - list.clientHeight < 40
   if (list) updatePosition(list)
-  const latestId = messages.value.at(-1)?.id
-  // 初次歷史與往前分頁不算新訊息；重連補回的較新訊息也納入提示。
-  if (!prepend && latestId !== undefined) {
-    recordNewMessages(incoming.filter(message => message.id > latestId).map(message => message.id))
-  }
+  const atBottom = isAtLatest.value
   const byId = new Map(messages.value.map(message => [message.id, message]))
+  const latestId = messages.value.at(-1)?.id
+  // 廣播可能亂序；只有查詢最近紀錄時才用最新 Id 區分舊資料。
+  if (source === 'live' || (source === 'recent' && latestId !== undefined)) {
+    recordNewMessages(incoming.map(message => message.id), byId, source === 'recent' ? latestId : undefined)
+  }
   for (const message of incoming) byId.set(message.id, message)
   messages.value = [...byId.values()].sort((a, b) => a.id - b.id)
   await nextTick()
   if (!list) return
   // 往前補資料時保留閱讀位置；閱讀舊訊息時收到廣播也不強制捲到底。
-  if (prepend) list.scrollTop = oldTop + list.scrollHeight - oldHeight
+  if (source === 'older') list.scrollTop = oldTop + list.scrollHeight - oldHeight
   else if (atBottom) list.scrollTop = list.scrollHeight
   updatePosition(list)
 }
@@ -64,7 +64,7 @@ async function loadHistory(hub: HubConnection): Promise<void> {
   const recent = await hub.invoke<ChatMessage[]>('GetRecentMessages')
   if (connection === hub && !disposed) {
     if (!messages.value.length) hasMore.value = recent.length === 50
-    await addMessages(recent)
+    await addMessages(recent, 'recent')
   }
 }
 
@@ -79,7 +79,7 @@ async function loadOlder(): Promise<void> {
     const older = await hub.invoke<ChatMessage[]>('GetOlderMessages', oldest.id)
     if (disposed || connection !== hub) return
     hasMore.value = older.length === 50
-    await addMessages(older, true)
+    await addMessages(older, 'older')
   } catch {
     errorMessage.value = '較早的訊息載入失敗，請再試一次。'
   } finally {
@@ -99,7 +99,7 @@ async function connect(): Promise<void> {
     .withAutomaticReconnect()
     .build()
   connection = hub
-  hub.on('MessageReceived', (message: ChatMessage) => { void addMessages([message]) })
+  hub.on('MessageReceived', (message: ChatMessage) => { void addMessages([message], 'live') })
   hub.onreconnecting(() => { status.value = 'reconnecting' })
   hub.onreconnected(() => {
     status.value = 'connected'

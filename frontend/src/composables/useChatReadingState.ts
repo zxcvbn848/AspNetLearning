@@ -16,9 +16,11 @@ export function useChatReadingState() {
     if (isAtLatest.value) markRead()
   }
 
-  function recordNewMessages(ids: number[]): void {
+  function recordNewMessages(ids: number[], existing: ReadonlyMap<number, unknown>, afterId?: number): void {
     if (isAtLatest.value) return
-    for (const id of ids) unreadIds.value.add(id)
+    for (const id of ids) {
+      if (!existing.has(id) && (afterId === undefined || id > afterId)) unreadIds.value.add(id)
+    }
   }
 
   return { isAtLatest, unreadCount, updatePosition, recordNewMessages }

@@ -4,7 +4,7 @@
 
 ## 主要程式碼
 
-- [ChatPanel.vue](../frontend/src/components/ChatPanel.vue) 的 `addMessages()` 在更新清單前讀取捲動位置，只把比原本最新 Id 更大的訊息交給計數邏輯。首次載入與往前分頁不會增加未讀；重連補回較新的訊息則會。
+- [ChatPanel.vue](../frontend/src/components/ChatPanel.vue) 的 `addMessages()` 在更新清單前讀取捲動位置。即時廣播只要 Id 尚未出現在清單中就能計數，即使先收到 102、再收到 101。首次載入與往前分頁不增加未讀，重連查詢只計入比目前最新 Id 更大的新資料。
 - [useChatReadingState.ts](../frontend/src/composables/useChatReadingState.ts) 是 Vue composable：用函式集中管理反應式狀態，角色類似前端的可重用狀態邏輯，與後端 DI Service 的生命週期不同。
 - `ref` 保存「是否在底部」與未讀 Id 集合；`computed` 從集合大小計算畫面數量。`Set` 對相同 Id 只保留一次，可聯想 PHP 以 Id 為 key 的陣列，或 Go 的 `map[int]struct{}`。
 - `scrollHeight - scrollTop - clientHeight` 是距離清單底部的高度差，小於 40px 視為已到最新。`@scroll` 在使用者捲動時更新狀態；`returnToLatest()` 將 `scrollTop` 設為 `scrollHeight`，瀏覽器會限制在實際可捲動的最大值。
