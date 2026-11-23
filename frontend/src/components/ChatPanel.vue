@@ -16,23 +16,54 @@ const draft = ref('')
 const status = ref<'connecting' | 'connected' | 'reconnecting' | 'disconnected'>('disconnected')
 const errorMessage = ref('')
 const sending = ref(false)
+const loadingOlder = ref(false)
+const hasMore = ref(false)
 const messageList = ref<HTMLElement | null>(null)
 let connection: HubConnection | null = null
 let disposed = false
 
 /** 合併歷史與即時訊息；重連時同一則可能出現兩次，所以以 Id 去重。 */
-async function addMessages(incoming: ChatMessage[]): Promise<void> {
+async function addMessages(incoming: ChatMessage[], prepend = false): Promise<void> {
+  const list = messageList.value
+  const oldHeight = list?.scrollHeight ?? 0
+  const oldTop = list?.scrollTop ?? 0
+  const atBottom = !list || oldHeight - oldTop - list.clientHeight < 40
   const byId = new Map(messages.value.map(message => [message.id, message]))
   for (const message of incoming) byId.set(message.id, message)
-  messages.value = [...byId.values()].sort((a, b) => a.id - b.id).slice(-50)
+  messages.value = [...byId.values()].sort((a, b) => a.id - b.id)
   await nextTick()
-  messageList.value?.scrollTo({ top: messageList.value.scrollHeight })
+  if (!list) return
+  // 往前補資料時保留閱讀位置；閱讀舊訊息時收到廣播也不強制捲到底。
+  if (prepend) list.scrollTop = oldTop + list.scrollHeight - oldHeight
+  else if (atBottom) list.scrollTop = list.scrollHeight
 }
 
 /** 進入聊天室與重連後，從資料庫補回最近 50 則訊息。 */
 async function loadHistory(hub: HubConnection): Promise<void> {
   const recent = await hub.invoke<ChatMessage[]>('GetRecentMessages')
-  if (connection === hub && !disposed) await addMessages(recent)
+  if (connection === hub && !disposed) {
+    if (!messages.value.length) hasMore.value = recent.length === 50
+    await addMessages(recent)
+  }
+}
+
+/** 把目前最舊訊息的 Id 當游標，向伺服器要求更早的一頁。 */
+async function loadOlder(): Promise<void> {
+  const hub = connection
+  const oldest = messages.value[0]
+  if (!hub || !oldest || loadingOlder.value || status.value !== 'connected') return
+  loadingOlder.value = true
+  errorMessage.value = ''
+  try {
+    const older = await hub.invoke<ChatMessage[]>('GetOlderMessages', oldest.id)
+    if (disposed || connection !== hub) return
+    hasMore.value = older.length === 50
+    await addMessages(older, true)
+  } catch {
+    errorMessage.value = '較早的訊息載入失敗，請再試一次。'
+  } finally {
+    loadingOlder.value = false
+  }
 }
 
 /** 建立持續連線；意外斷線時由 SignalR 自動嘗試重連。 */
@@ -98,7 +129,7 @@ onBeforeUnmount(() => {
     <div class="content-heading">
       <p class="eyebrow">SignalR /hubs/chat</p>
       <h2 id="chat-heading">公開聊天室</h2>
-      <p>登入會員都能看到這裡的訊息；畫面顯示最近 50 則。</p>
+      <p>先顯示最近 50 則，可分批載入更早訊息。</p>
     </div>
 
     <p role="status" class="chat-status">
@@ -106,6 +137,10 @@ onBeforeUnmount(() => {
       <button v-if="status === 'disconnected'" type="button" class="secondary-button" @click="connect">重新連線</button>
     </p>
 
+    <button v-if="hasMore" type="button" class="secondary-button" :disabled="loadingOlder || status !== 'connected'" @click="loadOlder">
+      {{ loadingOlder ? '載入中…' : '載入更早訊息' }}
+    </button>
+    <p v-else-if="messages.length" role="status">已載入所有歷史訊息。</p>
     <ol ref="messageList" class="chat-messages" role="log" aria-live="polite" aria-label="聊天室訊息">
       <li v-for="message in messages" :key="message.id" class="chat-message">
         <div class="chat-meta">
