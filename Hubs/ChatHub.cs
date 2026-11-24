@@ -21,7 +21,7 @@ public sealed class ChatHub(AppDbContext dbContext) : Hub
         await base.OnConnectedAsync();
     }
 
-    /// <summary>讀取最近 50 則訊息，供初次進入與重連後補齊畫面。</summary>
+    /// <summary>讀取最近 50 則訊息，供初次進入與確認補收終點。</summary>
     public Task<List<ChatMessageResponse>> GetRecentMessages() => GetMessagesAsync(null);
 
     /// <summary>以目前最舊訊息的 Id 為游標，讀取更早的最多 50 則訊息。</summary>
@@ -29,6 +29,20 @@ public sealed class ChatHub(AppDbContext dbContext) : Hub
     {
         if (beforeId <= 0) throw new HubException("訊息游標必須大於 0。");
         return GetMessagesAsync(beforeId);
+    }
+
+    /// <summary>依 Id 由小到大補收，單次最多 50 則。</summary>
+    public Task<List<ChatMessageResponse>> GetNewerMessages(long afterId, long throughId)
+    {
+        if (afterId < 0 || throughId <= afterId) throw new HubException("訊息游標範圍不正確。");
+
+        return (from message in dbContext.ChatMessages.AsNoTracking()
+            where message.Id > afterId && message.Id <= throughId
+            join user in dbContext.Users.AsNoTracking() on message.UserId equals user.Id
+            orderby message.Id
+            select new ChatMessageResponse(message.Id, message.UserId, user.Nickname, message.Content, message.CreatedAtUtc))
+            .Take(50)
+            .ToListAsync();
     }
 
     private async Task<List<ChatMessageResponse>> GetMessagesAsync(long? beforeId)

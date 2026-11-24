@@ -18,7 +18,7 @@
 
 ## 資料與連線生命週期
 
-`Models/ChatMessage.cs` 描述訊息資料，`Data/AppDbContext.cs` 對應 PostgreSQL 的 `chat_messages` 資料表；`AddChatMessages` Migration 建表。進入聊天室時 Vue 元件掛載並連線，切換到其他功能頁時元件卸載並斷線。意外斷線時 `withAutomaticReconnect()` 嘗試重連，成功後重讀最近訊息補上離線期間遺漏的內容。
+`Models/ChatMessage.cs` 描述訊息資料，`Data/AppDbContext.cs` 對應 PostgreSQL 的 `chat_messages` 資料表；`AddChatMessages` Migration 建表。進入聊天室時 Vue 元件掛載並連線，切換到其他功能頁時元件卸載並斷線。意外斷線時 `withAutomaticReconnect()` 嘗試重連，成功後從斷線前的訊息 Id [分批補收](26-chat-reconnect-catch-up.md)。
 
 SignalR Hub 方法不是一般 HTTP Controller，因此不會出現在 Scalar/OpenAPI 的路由清單，也不適合沿用此專案的 Postman HTTP Collection。直接從 Vue 畫面操作最容易看出雙向通訊；整合測試 `frontend/tests/chat-smoke.mjs` 會檢查未登入拒絕、輸入驗證、兩個會員收到廣播，以及重新連線後的歷史紀錄。
 

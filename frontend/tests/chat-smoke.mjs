@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { HubConnectionBuilder } from '@microsoft/signalr'
+import { loadChatGap } from '../src/services/chatHistory.ts'
 
 const baseUrl = process.env.API_BASE_URL ?? 'http://app:8080'
 const unique = `${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -74,16 +75,30 @@ try {
   assert.ok(history.some(message => message.id === firstReceived[0].id))
   assert.equal(history.find(message => message.id === firstReceived[0].id).nickname, '小明')
   await second.stop()
+  // 另一個分頁離線時送超過 50 則，驗證整段跨頁補收。
+  const afterId = history.at(-1).id
+  for (let index = 0; index < 51; index++) {
+    await first.invoke('SendMessage', `分頁測試 ${unique} ${index}`)
+  }
+  await waitFor(firstReceived, 53)
+  const expected = firstReceived.slice(2)
   const reconnected = connect(secondToken, [])
   await reconnected.start()
   try {
-    assert.ok((await reconnected.invoke('GetRecentMessages')).some(message => message.id === firstReceived[0].id))
+    const recent = await reconnected.invoke('GetRecentMessages')
+    const throughId = recent.at(-1).id
+    await first.invoke('SendMessage', `補收期間的新訊息 ${unique}`)
+    const recovered = []
+    const pageSizes = []
+    await loadChatGap(afterId, throughId,
+      (cursor, end) => reconnected.invoke('GetNewerMessages', cursor, end),
+      async page => { pageSizes.push(page.length); recovered.push(...page) },
+      () => true)
+    assert.deepEqual(pageSizes, [50, 1])
+    assert.deepEqual(recovered.map(message => message.id), expected.map(message => message.id))
+    await assert.rejects(reconnected.invoke('GetNewerMessages', throughId, throughId))
   } finally {
     await reconnected.stop()
-  }
-  // 建立超過一頁的資料，驗證游標分頁不重複且保留由舊到新的順序。
-  for (let index = 0; index < 51; index++) {
-    await first.invoke('SendMessage', `分頁測試 ${unique} ${index}`)
   }
   const latest = await first.invoke('GetRecentMessages')
   assert.equal(latest.length, 50)
