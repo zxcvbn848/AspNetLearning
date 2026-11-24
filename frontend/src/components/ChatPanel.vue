@@ -5,16 +5,22 @@ import { getRealtimeAccessToken } from '../services/apiClient'
 import { loadChatGap } from '../services/chatHistory'
 import { useChatReadingState } from '../composables/useChatReadingState'
 
-interface ChatMessage {
+interface ChatMessagePreview {
   id: number
   userId: number
   nickname: string | null
   content: string
+}
+
+interface ChatMessage extends ChatMessagePreview {
   createdAtUtc: string
+  replyTo: ChatMessagePreview | null
 }
 
 const messages = ref<ChatMessage[]>([])
 const draft = ref('')
+const replyTarget = ref<ChatMessagePreview | null>(null)
+const draftInput = ref<HTMLInputElement | null>(null)
 const status = ref<'connecting' | 'connected' | 'reconnecting' | 'disconnected'>('disconnected')
 const errorMessage = ref('')
 const sending = ref(false)
@@ -152,15 +158,25 @@ async function connect(): Promise<void> {
   }
 }
 
-/** Hub 的 SendMessage 方法負責驗證、儲存與廣播；畫面等廣播回來後再加入清單。 */
+function selectReply(message: ChatMessagePreview): void {
+  replyTarget.value = message
+  draftInput.value?.focus()
+}
+
+/** 一般訊息與回覆都等廣播回來後才加入清單。 */
 async function sendMessage(): Promise<void> {
   const text = draft.value.trim()
-  if (!text || text.length > 500 || !connection || connection.state !== HubConnectionState.Connected) return
+  if (sending.value || !text || text.length > 500 || !connection || connection.state !== HubConnectionState.Connected) return
   sending.value = true
   errorMessage.value = ''
   try {
-    await connection.invoke('SendMessage', text)
+    if (replyTarget.value) {
+      await connection.invoke('SendReply', text, replyTarget.value.id)
+    } else {
+      await connection.invoke('SendMessage', text)
+    }
     draft.value = ''
+    replyTarget.value = null
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '訊息傳送失敗。'
   } finally {
@@ -198,7 +214,13 @@ onBeforeUnmount(() => {
           <strong>{{ message.nickname || `會員 #${message.userId}` }}</strong>
           <time :datetime="message.createdAtUtc">{{ new Date(message.createdAtUtc).toLocaleString('zh-TW') }}</time>
         </div>
+        <blockquote v-if="message.replyTo" class="chat-quote">
+          <strong>{{ message.replyTo.nickname || `會員 #${message.replyTo.userId}` }}</strong>
+          <p>{{ message.replyTo.content }}</p>
+        </blockquote>
         <p>{{ message.content }}</p>
+        <button type="button" class="secondary-button chat-reply-button"
+          :disabled="status !== 'connected' || sending" @click="selectReply(message)">回覆</button>
       </li>
     </ol>
     <div class="chat-reading-status">
@@ -209,8 +231,13 @@ onBeforeUnmount(() => {
 
     <form class="chat-form" @submit.prevent="sendMessage">
       <label for="chat-draft">新訊息</label>
+      <div v-if="replyTarget" class="chat-quote">
+        <strong>回覆 {{ replyTarget.nickname || `會員 #${replyTarget.userId}` }}</strong>
+        <p>{{ replyTarget.content }}</p>
+        <button type="button" class="secondary-button chat-reply-button" :disabled="sending" @click="replyTarget = null">取消回覆</button>
+      </div>
       <div class="input-row">
-        <input id="chat-draft" v-model="draft" maxlength="500" autocomplete="off" placeholder="輸入訊息（最多 500 字）" :disabled="status !== 'connected'">
+        <input id="chat-draft" ref="draftInput" v-model="draft" maxlength="500" autocomplete="off" placeholder="輸入訊息（最多 500 字）" :disabled="status !== 'connected'" :readonly="sending">
         <button type="submit" :disabled="status !== 'connected' || sending || !draft.trim()">{{ sending ? '傳送中…' : '傳送' }}</button>
       </div>
       <p class="chat-error" role="alert">{{ errorMessage }}</p>
@@ -227,6 +254,9 @@ onBeforeUnmount(() => {
 .chat-reading-status button { padding: 8px 12px; color: var(--text); background: var(--secondary); }
 .chat-message + .chat-message { border-top: 1px solid var(--border); }
 .chat-message p { margin: 6px 0 0; white-space: pre-wrap; }
+.chat-quote { margin: 8px 0 0; padding: 8px 12px; border-inline-start: 3px solid var(--border); color: var(--muted); overflow-wrap: anywhere; }
+.chat-quote p { margin: 4px 0 0; white-space: pre-wrap; }
+.chat-message .chat-reply-button, .chat-form .chat-reply-button { margin-top: 6px; padding: 4px 10px; color: var(--text); background: var(--secondary); }
 .chat-meta { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: .85rem; }
 .chat-form { display: grid; gap: 10px; margin-top: 20px; }
 .chat-form label { font-weight: 700; }
