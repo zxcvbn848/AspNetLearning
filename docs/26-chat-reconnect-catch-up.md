@@ -2,6 +2,17 @@
 
 假設斷線前最後一則是 100，重連時最新一則是 180。從後端取回 101～150、151～180 兩批，各批最多 50 則。補收期間若收到 181 的即時廣播，仍會依原來的範圍繼續查到 180。
 
+```mermaid
+flowchart TD
+    A["左邊斷線，記住最後收到的 Id 100"] --> B["右邊繼續傳送 101～180"]
+    B --> C["左邊重連，記住這一輪的終點 180"]
+    C --> D["第一批：查 100 < Id ≤ 180<br/>依 Id 升冪取 50 則 → 101～150"]
+    D --> E["游標移到 150"]
+    E --> F["第二批：查 150 < Id ≤ 180<br/>取得 151～180"]
+    F --> G["依 Id 合併去重，補收到 180 就結束"]
+    C -. "途中收到即時訊息 181" .-> H["181 照常加入畫面<br/>補收終點仍是 180"]
+```
+
 1. [ChatPanel.vue](../frontend/src/components/ChatPanel.vue) 在斷線時記下目前最大的 Id。`GetRecentMessages()` 提供重連當下的最新 Id，作為本輪補收終點。
 2. [ChatHub.cs](../Hubs/ChatHub.cs) 的 `GetNewerMessages` 用 `afterId < Id <= throughId` 篩選，依 Id 升冪取 50 則。這次需要先拿到最接近斷線前游標的資料，所以不必反轉結果。
 3. [chatHistory.ts](../frontend/src/services/chatHistory.ts) 用每批最後一則的 Id 推進游標。Vue 用既有的 Id 去重、排序與捲動規則更新畫面。若補收失敗，可重新連線從保留的起點重試。
