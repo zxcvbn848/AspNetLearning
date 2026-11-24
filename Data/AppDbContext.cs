@@ -111,7 +111,10 @@ public sealed class AppDbContext : DbContext
             entity.HasKey(message => message.Id);
             entity.Property(message => message.Content).IsRequired().HasMaxLength(500);
             entity.Property(message => message.CreatedAtUtc).IsRequired();
-            entity.HasOne<User>().WithMany().HasForeignKey(message => message.UserId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(message => message.Author).WithMany().HasForeignKey(message => message.UserId).OnDelete(DeleteBehavior.Cascade);
+            // 原訊息刪除時清空引用，保留其他會員的回覆。
+            entity.HasOne(message => message.ReplyToMessage).WithMany()
+                .HasForeignKey(message => message.ReplyToMessageId).OnDelete(DeleteBehavior.SetNull);
             entity.HasIndex(message => message.CreatedAtUtc);
         });
     }

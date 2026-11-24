@@ -5,6 +5,7 @@ using AspNetLearning.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace AspNetLearning.Hubs;
 
@@ -36,31 +37,42 @@ public sealed class ChatHub(AppDbContext dbContext) : Hub
     {
         if (afterId < 0 || throughId <= afterId) throw new HubException("訊息游標範圍不正確。");
 
-        return (from message in dbContext.ChatMessages.AsNoTracking()
-            where message.Id > afterId && message.Id <= throughId
-            join user in dbContext.Users.AsNoTracking() on message.UserId equals user.Id
-            orderby message.Id
-            select new ChatMessageResponse(message.Id, message.UserId, user.Nickname, message.Content, message.CreatedAtUtc))
+        return dbContext.ChatMessages.AsNoTracking()
+            .Where(message => message.Id > afterId && message.Id <= throughId)
+            .OrderBy(message => message.Id)
             .Take(50)
+            .Select(ToResponse)
             .ToListAsync();
     }
 
     private async Task<List<ChatMessageResponse>> GetMessagesAsync(long? beforeId)
     {
         // null 代表最新一頁；否則只查 Id 更小的訊息，避免新訊息使分頁位移。
-        List<ChatMessageResponse> recent = await (from message in dbContext.ChatMessages.AsNoTracking()
-            where beforeId == null || message.Id < beforeId
-            join user in dbContext.Users.AsNoTracking() on message.UserId equals user.Id
-            orderby message.Id descending
-            select new ChatMessageResponse(message.Id, message.UserId, user.Nickname, message.Content, message.CreatedAtUtc))
+        List<ChatMessageResponse> recent = await dbContext.ChatMessages.AsNoTracking()
+            .Where(message => beforeId == null || message.Id < beforeId)
+            .OrderByDescending(message => message.Id)
             .Take(50)
+            .Select(ToResponse)
             .ToListAsync();
         recent.Reverse();
         return recent;
     }
 
-    /// <summary>驗證、儲存並廣播一則聊天訊息。</summary>
-    public async Task SendMessage(string content)
+    // 查歷史、重連補收與即時廣播共用這份格式，引用不必另外向前端查詢。
+    private static readonly Expression<Func<ChatMessage, ChatMessageResponse>> ToResponse =
+        message => new ChatMessageResponse(
+            message.Id, message.UserId, message.Author.Nickname, message.Content, message.CreatedAtUtc,
+            message.ReplyToMessage == null ? null : new ChatReplyPreview(
+                message.ReplyToMessage.Id, message.ReplyToMessage.UserId,
+                message.ReplyToMessage.Author.Nickname, message.ReplyToMessage.Content));
+
+    /// <summary>傳送一般聊天訊息。</summary>
+    public Task SendMessage(string content) => SaveAndBroadcastAsync(content, null);
+
+    /// <summary>回覆聊天室內已存在的訊息。</summary>
+    public Task SendReply(string content, long replyToMessageId) => SaveAndBroadcastAsync(content, replyToMessageId);
+
+    private async Task SaveAndBroadcastAsync(string content, long? replyToMessageId)
     {
         string text = content?.Trim() ?? "";
         if (text.Length is < 1 or > 500)
@@ -73,17 +85,23 @@ public sealed class ChatHub(AppDbContext dbContext) : Hub
             throw new HubException("請先登入再傳送訊息。");
         }
 
+        if (replyToMessageId is long targetId &&
+            (targetId <= 0 || !await dbContext.ChatMessages.AnyAsync(message => message.Id == targetId)))
+        {
+            throw new HubException("找不到要回覆的訊息。");
+        }
+
         var message = new ChatMessage
         {
             UserId = userId,
+            ReplyToMessageId = replyToMessageId,
             Content = text,
             CreatedAtUtc = DateTime.UtcNow
         };
         dbContext.ChatMessages.Add(message);
         await dbContext.SaveChangesAsync();
-        string? nickname = await dbContext.Users.Where(user => user.Id == userId)
-            .Select(user => user.Nickname).SingleAsync();
-        await Clients.Group(Lobby).SendAsync("MessageReceived",
-            new ChatMessageResponse(message.Id, userId, nickname, text, message.CreatedAtUtc));
+        ChatMessageResponse response = await dbContext.ChatMessages.AsNoTracking()
+            .Where(saved => saved.Id == message.Id).Select(ToResponse).SingleAsync();
+        await Clients.Group(Lobby).SendAsync("MessageReceived", response);
     }
 }

@@ -38,12 +38,17 @@ namespace AspNetLearning.Data.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<long?>("ReplyToMessageId")
+                        .HasColumnType("bigint");
+
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedAtUtc");
+
+                    b.HasIndex("ReplyToMessageId");
 
                     b.HasIndex("UserId");
 
@@ -161,11 +166,20 @@ namespace AspNetLearning.Data.Migrations
 
             modelBuilder.Entity("AspNetLearning.Models.ChatMessage", b =>
                 {
-                    b.HasOne("AspNetLearning.Models.User", null)
+                    b.HasOne("AspNetLearning.Models.ChatMessage", "ReplyToMessage")
+                        .WithMany()
+                        .HasForeignKey("ReplyToMessageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("AspNetLearning.Models.User", "Author")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Author");
+
+                    b.Navigation("ReplyToMessage");
                 });
 
             modelBuilder.Entity("AspNetLearning.Models.RefreshToken", b =>

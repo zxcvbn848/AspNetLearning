@@ -66,19 +66,29 @@ try {
   assert.equal(firstReceived[0].nickname, '小明')
   assert.equal(secondReceived[0].id, firstReceived[0].id)
   assert.ok(!('email' in firstReceived[0]))
+  assert.equal(firstReceived[0].replyTo, null)
 
-  await second.invoke('SendMessage', `暱稱測試 ${unique}`)
+  const original = firstReceived[0]
+  const quote = { id: original.id, userId: original.userId, nickname: '小明', content: text.trim() }
+  await assert.rejects(second.invoke('SendReply', '無效回覆', 0), /找不到要回覆的訊息/)
+  await assert.rejects(second.invoke('SendReply', '無效回覆', Number.MAX_SAFE_INTEGER), /找不到要回覆的訊息/)
+  await second.invoke('SendReply', `暱稱測試 ${unique}`, original.id)
   await Promise.all([waitFor(firstReceived, 2), waitFor(secondReceived, 2)])
   assert.equal(firstReceived[1].nickname, '小華')
+  assert.deepEqual(firstReceived[1].replyTo, quote)
+  assert.deepEqual(secondReceived[1].replyTo, quote)
 
   const history = await second.invoke('GetRecentMessages')
   assert.ok(history.some(message => message.id === firstReceived[0].id))
   assert.equal(history.find(message => message.id === firstReceived[0].id).nickname, '小明')
+  assert.deepEqual(history.find(message => message.id === firstReceived[1].id)?.replyTo, quote)
   await second.stop()
   // 另一個分頁離線時送超過 50 則，驗證整段跨頁補收。
   const afterId = history.at(-1).id
   for (let index = 0; index < 51; index++) {
-    await first.invoke('SendMessage', `分頁測試 ${unique} ${index}`)
+    const content = `分頁測試 ${unique} ${index}`
+    if (index === 0) await first.invoke('SendReply', content, original.id)
+    else await first.invoke('SendMessage', content)
   }
   await waitFor(firstReceived, 53)
   const expected = firstReceived.slice(2)
@@ -96,6 +106,7 @@ try {
       () => true)
     assert.deepEqual(pageSizes, [50, 1])
     assert.deepEqual(recovered.map(message => message.id), expected.map(message => message.id))
+    assert.deepEqual(recovered[0].replyTo, quote)
     await assert.rejects(reconnected.invoke('GetNewerMessages', throughId, throughId))
   } finally {
     await reconnected.stop()
@@ -105,7 +116,7 @@ try {
   const older = await first.invoke('GetOlderMessages', latest[0].id)
   assert.ok(older.length > 0 && older.length <= 50)
   assert.ok(older.every(message => message.id < latest[0].id))
-  assert.ok(older.some(message => message.content === `分頁測試 ${unique} 0`))
+  assert.deepEqual(older.find(message => message.content === `分頁測試 ${unique} 0`)?.replyTo, quote)
   assert.ok(older.every((message, index) => index === 0 || older[index - 1].id < message.id))
   assert.deepEqual(await first.invoke('GetOlderMessages', 1), [])
   await assert.rejects(first.invoke('GetOlderMessages', 0))
