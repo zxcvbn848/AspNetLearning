@@ -2,6 +2,7 @@
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { HubConnectionBuilder, HubConnectionState, type HubConnection } from '@microsoft/signalr'
 import { getRealtimeAccessToken } from '../services/apiClient'
+import { loadChatGap } from '../services/chatHistory'
 import { useChatReadingState } from '../composables/useChatReadingState'
 
 interface ChatMessage {
@@ -23,19 +24,21 @@ const messageList = ref<HTMLElement | null>(null)
 const { isAtLatest, unreadCount, updatePosition, recordNewMessages } = useChatReadingState()
 let connection: HubConnection | null = null
 let disposed = false
+let historyLoaded = false
+let catchUpAfter: number | null = null
+let historyVersion = 0
 
 /** 合併歷史與即時訊息；重連時同一則可能出現兩次，所以以 Id 去重。 */
-async function addMessages(incoming: ChatMessage[], source: 'live' | 'recent' | 'older'): Promise<void> {
+async function addMessages(incoming: ChatMessage[], source: 'new' | 'recent' | 'older'): Promise<void> {
   const list = messageList.value
   const oldHeight = list?.scrollHeight ?? 0
   const oldTop = list?.scrollTop ?? 0
   if (list) updatePosition(list)
   const atBottom = isAtLatest.value
   const byId = new Map(messages.value.map(message => [message.id, message]))
-  const latestId = messages.value.at(-1)?.id
-  // 廣播可能亂序；只有查詢最近紀錄時才用最新 Id 區分舊資料。
-  if (source === 'live' || (source === 'recent' && latestId !== undefined)) {
-    recordNewMessages(incoming.map(message => message.id), byId, source === 'recent' ? latestId : undefined)
+  // 補收與廣播可能收到同一則訊息，沿用清單中的 Id 去重。
+  if (source === 'new') {
+    recordNewMessages(incoming.map(message => message.id), byId)
   }
   for (const message of incoming) byId.set(message.id, message)
   messages.value = [...byId.values()].sort((a, b) => a.id - b.id)
@@ -59,12 +62,34 @@ function onMessageScroll(): void {
   if (messageList.value) updatePosition(messageList.value)
 }
 
-/** 進入聊天室與重連後，從資料庫補回最近 50 則訊息。 */
+function rememberCatchUpStart(): void {
+  historyVersion++
+  if (historyLoaded) catchUpAfter ??= messages.value.at(-1)?.id ?? 0
+}
+
+/** 初次讀取最新 50 則，重連時從斷線前的游標分批補收。 */
 async function loadHistory(hub: HubConnection): Promise<void> {
-  const recent = await hub.invoke<ChatMessage[]>('GetRecentMessages')
-  if (connection === hub && !disposed) {
-    if (!messages.value.length) hasMore.value = recent.length === 50
-    await addMessages(recent, 'recent')
+  const version = ++historyVersion
+  const isCurrent = () => !disposed && connection === hub && historyVersion === version
+  const afterId = catchUpAfter
+  try {
+    const recent = await hub.invoke<ChatMessage[]>('GetRecentMessages')
+    if (!isCurrent()) return
+    if (afterId === null) {
+      hasMore.value = recent.length === 50
+      historyLoaded = true
+      await addMessages(recent, 'recent')
+      return
+    }
+
+    await loadChatGap(afterId, recent.at(-1)?.id ?? afterId,
+      (cursor, throughId) => hub.invoke<ChatMessage[]>('GetNewerMessages', cursor, throughId),
+      page => addMessages(page, 'new'), isCurrent)
+    if (isCurrent()) catchUpAfter = null
+  } catch {
+    if (!isCurrent()) return
+    status.value = 'disconnected'
+    errorMessage.value = '訊息載入失敗，請按「重新連線」再試一次。'
   }
 }
 
@@ -99,15 +124,20 @@ async function connect(): Promise<void> {
     .withAutomaticReconnect()
     .build()
   connection = hub
-  hub.on('MessageReceived', (message: ChatMessage) => { void addMessages([message], 'live') })
-  hub.onreconnecting(() => { status.value = 'reconnecting' })
+  hub.on('MessageReceived', (message: ChatMessage) => { void addMessages([message], 'new') })
+  hub.onreconnecting(() => {
+    rememberCatchUpStart()
+    status.value = 'reconnecting'
+  })
   hub.onreconnected(() => {
     status.value = 'connected'
-    void loadHistory(hub).catch(() => {
-      errorMessage.value = '歷史訊息載入失敗，請重新連線。'
-    })
+    void loadHistory(hub)
   })
-  hub.onclose(() => { if (!disposed && connection === hub) status.value = 'disconnected' })
+  hub.onclose(() => {
+    if (disposed || connection !== hub) return
+    rememberCatchUpStart()
+    status.value = 'disconnected'
+  })
 
   try {
     await hub.start()

@@ -25,4 +25,4 @@ orderby message.Id descending
 
 這是 Hub 方法，測試沿用 SignalR Client；沒有新增一般 HTTP API 或 Postman HTTP 請求。`frontend/tests/chat-smoke.mjs` 會驗證跨頁查詢、排序、結尾空頁、無效游標，以及查詢期間新增訊息的情況。
 
-目前載入的訊息保留在此 Vue 元件的記憶體中，切換頁面會釋放；長時間大量載入時，之後再考慮虛擬清單或限制保留頁數。重連仍只補讀最新 50 則，長時間離線可能需要重新載入歷史才能補齊。
+目前載入的訊息保留在此 Vue 元件的記憶體中，切換頁面會釋放。重連時的查詢方向與往上翻頁相反，詳見[斷線後分批補收](26-chat-reconnect-catch-up.md)。
