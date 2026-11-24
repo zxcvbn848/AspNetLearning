@@ -178,7 +178,8 @@ async function sendMessage(): Promise<void> {
     draft.value = ''
     replyTarget.value = null
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : '訊息傳送失敗。'
+    const message = error instanceof Error ? error.message : '訊息傳送失敗。'
+    errorMessage.value = message.endsWith('CHAT_RATE_LIMIT') ? '傳送太頻繁，請稍後再試。' : message
   } finally {
     sending.value = false
   }

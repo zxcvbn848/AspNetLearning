@@ -85,10 +85,19 @@ try {
   await second.stop()
   // 另一個分頁離線時送超過 50 則，驗證整段跨頁補收。
   const afterId = history.at(-1).id
-  for (let index = 0; index < 51; index++) {
-    const content = `分頁測試 ${unique} ${index}`
-    if (index === 0) await first.invoke('SendReply', content, original.id)
-    else await first.invoke('SendMessage', content)
+  // 多位會員各送最多五則，保持正式限流規則，也能快速建立 51 則測試資料。
+  for (let start = 0; start < 51; start += 5) {
+    const sender = connect(await register(`chat-seed-${start}-${unique}@example.com`), [])
+    await sender.start()
+    try {
+      for (let index = start; index < Math.min(start + 5, 51); index++) {
+        const content = `分頁測試 ${unique} ${index}`
+        if (index === 0) await sender.invoke('SendReply', content, original.id)
+        else await sender.invoke('SendMessage', content)
+      }
+    } finally {
+      await sender.stop()
+    }
   }
   await waitFor(firstReceived, 53)
   const expected = firstReceived.slice(2)
@@ -123,7 +132,47 @@ try {
   // 新訊息不會改變既定游標之前的資料。
   await first.invoke('SendMessage', `分頁期間的新訊息 ${unique}`)
   assert.deepEqual(await first.invoke('GetOlderMessages', latest[0].id), older)
-  console.log('PASS: 未登入拒絕、訊息驗證、跨會員廣播與資料庫歷史紀錄')
+
+  const limitedToken = await register(`chat-limit-${unique}@example.com`)
+  const tabA = connect(limitedToken, [])
+  const tabB = connect(limitedToken, [])
+  try {
+    await Promise.all([tabA.start(), tabB.start()])
+    const prefix = `限流測試 ${unique} `
+    const initialBroadcastCount = firstReceived.length
+    await tabA.invoke('SendMessage', prefix + '0')
+    await tabB.invoke('SendReply', prefix + '1', original.id)
+    const results = await Promise.allSettled([
+      tabA.invoke('SendMessage', prefix + '2'),
+      tabB.invoke('SendReply', prefix + '3', original.id),
+      tabA.invoke('SendMessage', prefix + '4'),
+      tabB.invoke('SendReply', prefix + '5', original.id),
+    ])
+    const denied = results.filter(result => result.status === 'rejected')
+    assert.equal(denied.length, 1)
+    assert.match(denied[0].reason.message, /CHAT_RATE_LIMIT$/)
+    await assert.rejects(tabB.invoke('SendMessage', prefix + 'blocked'), /CHAT_RATE_LIMIT$/)
+
+    const otherUserMessage = `另一會員 ${unique}`
+    await first.invoke('SendMessage', otherUserMessage)
+    await waitFor(firstReceived, initialBroadcastCount + 6)
+    const accepted = [prefix + '0', prefix + '1',
+      ...results.flatMap((result, index) => result.status === 'fulfilled' ? [prefix + (index + 2)] : [])].sort()
+    const broadcastContents = firstReceived.map(message => message.content)
+    assert.ok(broadcastContents.includes(otherUserMessage))
+    assert.deepEqual(broadcastContents.filter(content => content.startsWith(prefix)).sort(), accepted)
+
+    const persisted = await tabA.invoke('GetRecentMessages')
+    assert.deepEqual(persisted.map(message => message.content).filter(content => content.startsWith(prefix)).sort(), accepted)
+
+    await new Promise(resolve => setTimeout(resolve, 10_000))
+    await tabB.invoke('SendMessage', prefix + 'retry')
+    await waitFor(firstReceived, initialBroadcastCount + 7)
+    assert.equal(firstReceived.at(-1).content, prefix + 'retry')
+  } finally {
+    await Promise.all([tabA.stop(), tabB.stop()])
+  }
+  console.log('PASS: 認證、回覆、分頁、重連補收與跨連線發送限流')
 } finally {
   await Promise.all([first.stop(), second.stop()])
 }

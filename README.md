@@ -305,6 +305,8 @@ PR 指向 `dev` 或 `main` 時會自動執行建置與測試；檢查內容與�
 
 聊天室引用：[第二十七課：回覆指定訊息](docs/27-chat-message-replies.md)。
 
+聊天室發送限流：[第二十八課：同一會員共用發送額度](docs/28-chat-message-rate-limit.md)。
+
 快速複習：[ASP.NET Core 名詞與概念速查](docs/aspnet-core-glossary.md)，包含 PHP／Laravel、Go 的相近概念對照。
 
 1. [第一課：讀懂問候 API](docs/01-hello-api.md)
