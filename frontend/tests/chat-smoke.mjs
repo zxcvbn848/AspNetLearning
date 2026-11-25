@@ -172,7 +172,23 @@ try {
   } finally {
     await Promise.all([tabA.stop(), tabB.stop()])
   }
-  console.log('PASS: 認證、回覆、分頁、重連補收與跨連線發送限流')
+
+  const firstDeleted = []
+  const secondDeleted = []
+  first.on('MessageDeleted', id => firstDeleted.push(id))
+  second.on('MessageDeleted', id => secondDeleted.push(id))
+  await second.start()
+  await assert.rejects(second.invoke('DeleteMessage', original.id), /找不到可刪除的訊息/)
+  await first.invoke('DeleteMessage', original.id)
+  await Promise.all([waitFor(firstDeleted, 1), waitFor(secondDeleted, 1)])
+  await assert.rejects(first.invoke('DeleteMessage', original.id), /找不到可刪除的訊息/)
+
+  const afterDeletion = await second.invoke('GetNewerMessages', original.id - 1, firstReceived[1].id)
+  assert.deepEqual(afterDeletion.map(message => message.id), [firstReceived[1].id])
+  assert.equal(afterDeletion[0].replyTo, null)
+  assert.deepEqual(firstDeleted, [original.id])
+  assert.deepEqual(secondDeleted, [original.id])
+  console.log('PASS: 認證、回覆、分頁、重連補收、發送限流與刪除權限')
 } finally {
   await Promise.all([first.stop(), second.stop()])
 }

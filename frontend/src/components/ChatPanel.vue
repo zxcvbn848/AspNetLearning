@@ -2,7 +2,8 @@
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { HubConnectionBuilder, HubConnectionState, type HubConnection } from '@microsoft/signalr'
 import { getRealtimeAccessToken } from '../services/apiClient'
-import { loadChatGap } from '../services/chatHistory'
+import { getCurrentUser } from '../services/authApi'
+import { filterDeletedChatMessages, loadChatGap } from '../services/chatHistory'
 import { useChatReadingState } from '../composables/useChatReadingState'
 
 interface ChatMessagePreview {
@@ -24,10 +25,14 @@ const draftInput = ref<HTMLInputElement | null>(null)
 const status = ref<'connecting' | 'connected' | 'reconnecting' | 'disconnected'>('disconnected')
 const errorMessage = ref('')
 const sending = ref(false)
+const currentUserId = ref<number | null>(null)
+const deleteTargetId = ref<number | null>(null)
+const deleting = ref(false)
 const loadingOlder = ref(false)
 const hasMore = ref(false)
 const messageList = ref<HTMLElement | null>(null)
-const { isAtLatest, unreadCount, updatePosition, recordNewMessages } = useChatReadingState()
+const { isAtLatest, unreadCount, updatePosition, recordNewMessages, forgetMessage } = useChatReadingState()
+const deletedIds = new Set<number>()
 let connection: HubConnection | null = null
 let disposed = false
 let historyLoaded = false
@@ -42,11 +47,12 @@ async function addMessages(incoming: ChatMessage[], source: 'new' | 'recent' | '
   if (list) updatePosition(list)
   const atBottom = isAtLatest.value
   const byId = new Map(messages.value.map(message => [message.id, message]))
+  const visible = filterDeletedChatMessages(incoming, deletedIds)
   // 補收與廣播可能收到同一則訊息，沿用清單中的 Id 去重。
   if (source === 'new') {
-    recordNewMessages(incoming.map(message => message.id), byId)
+    recordNewMessages(visible.map(message => message.id), byId)
   }
-  for (const message of incoming) byId.set(message.id, message)
+  for (const message of visible) byId.set(message.id, message)
   messages.value = [...byId.values()].sort((a, b) => a.id - b.id)
   await nextTick()
   if (!list) return
@@ -54,6 +60,41 @@ async function addMessages(incoming: ChatMessage[], source: 'new' | 'recent' | '
   if (source === 'older') list.scrollTop = oldTop + list.scrollHeight - oldHeight
   else if (atBottom) list.scrollTop = list.scrollHeight
   updatePosition(list)
+}
+
+function removeMessage(id: number): void {
+  if (deletedIds.has(id)) return
+  deletedIds.add(id)
+  messages.value = filterDeletedChatMessages(messages.value, deletedIds)
+  forgetMessage(id)
+  if (replyTarget.value?.id === id) replyTarget.value = null
+  if (deleteTargetId.value === id) deleteTargetId.value = null
+  void nextTick(onMessageScroll)
+}
+
+async function loadCurrentUserId(): Promise<void> {
+  const token = window.sessionStorage.getItem('accessToken')
+  if (!token || currentUserId.value !== null) return
+  try {
+    const user = await getCurrentUser(token)
+    if (!disposed) currentUserId.value = user.id
+  } catch {
+    // 暫時無法判斷作者時先隱藏刪除控制，重連再讀取。
+  }
+}
+
+async function deleteMessage(id: number): Promise<void> {
+  if (deleting.value || deleteTargetId.value !== id || connection?.state !== HubConnectionState.Connected) return
+  deleting.value = true
+  errorMessage.value = ''
+  try {
+    await connection.invoke('DeleteMessage', id)
+    removeMessage(id)
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : '訊息刪除失敗。'
+  } finally {
+    deleting.value = false
+  }
 }
 
 /** 點擊按鈕或手動捲到底時，都清除本分頁的新訊息提示。 */
@@ -131,12 +172,14 @@ async function connect(): Promise<void> {
     .build()
   connection = hub
   hub.on('MessageReceived', (message: ChatMessage) => { void addMessages([message], 'new') })
+  hub.on('MessageDeleted', removeMessage)
   hub.onreconnecting(() => {
     rememberCatchUpStart()
     status.value = 'reconnecting'
   })
   hub.onreconnected(() => {
     status.value = 'connected'
+    void loadCurrentUserId()
     void loadHistory(hub)
   })
   hub.onclose(() => {
@@ -149,6 +192,7 @@ async function connect(): Promise<void> {
     await hub.start()
     if (disposed) { await hub.stop(); return }
     status.value = 'connected'
+    void loadCurrentUserId()
     await loadHistory(hub)
   } catch {
     if (!disposed) {
@@ -222,6 +266,16 @@ onBeforeUnmount(() => {
         <p>{{ message.content }}</p>
         <button type="button" class="secondary-button chat-reply-button"
           :disabled="status !== 'connected' || sending" @click="selectReply(message)">回覆</button>
+        <template v-if="message.userId === currentUserId">
+          <button v-if="deleteTargetId !== message.id" type="button" class="secondary-button chat-reply-button"
+            :disabled="status !== 'connected' || deleting" @click="deleteTargetId = message.id">刪除</button>
+          <template v-else>
+            <button type="button" class="secondary-button chat-reply-button"
+              :disabled="status !== 'connected' || deleting" @click="deleteMessage(message.id)">確認刪除</button>
+            <button type="button" class="secondary-button chat-reply-button"
+              :disabled="deleting" @click="deleteTargetId = null">取消</button>
+          </template>
+        </template>
       </li>
     </ol>
     <div class="chat-reading-status">

@@ -23,5 +23,9 @@ export function useChatReadingState() {
     }
   }
 
-  return { isAtLatest, unreadCount, updatePosition, recordNewMessages }
+  function forgetMessage(id: number): void {
+    unreadIds.value.delete(id)
+  }
+
+  return { isAtLatest, unreadCount, updatePosition, recordNewMessages, forgetMessage }
 }

@@ -73,6 +73,26 @@ public sealed class ChatHub(AppDbContext dbContext, ChatSendLimiter sendLimiter)
     /// <summary>回覆聊天室內已存在的訊息。</summary>
     public Task SendReply(string content, long replyToMessageId) => SaveAndBroadcastAsync(content, replyToMessageId);
 
+    /// <summary>刪除自己的訊息，再通知仍在線的聊天室。</summary>
+    public async Task DeleteMessage(long messageId)
+    {
+        if (Context.User is null || !Context.User.TryGetUserId(out int userId))
+        {
+            throw new HubException("請先登入再刪除訊息。");
+        }
+
+        // 擁有權條件放在 DELETE 本身，查驗與刪除只執行一次 SQL。
+        int deleted = await dbContext.ChatMessages
+            .Where(message => message.Id == messageId && message.UserId == userId)
+            .ExecuteDeleteAsync(Context.ConnectionAborted);
+        if (deleted == 0)
+        {
+            throw new HubException("找不到可刪除的訊息。");
+        }
+
+        await Clients.Group(Lobby).SendAsync("MessageDeleted", messageId);
+    }
+
     private async Task SaveAndBroadcastAsync(string content, long? replyToMessageId)
     {
         string text = content?.Trim() ?? "";
