@@ -93,6 +93,22 @@ public sealed class ChatHub(AppDbContext dbContext, ChatSendLimiter sendLimiter)
         await Clients.Group(Lobby).SendAsync("MessageDeleted", messageId);
     }
 
+    /// <summary>重連時確認已載入的訊息或引用原文是否還存在。</summary>
+    public async Task<long[]> GetMissingMessageIds(long[]? messageIds)
+    {
+        if (messageIds is null || messageIds.Length is < 1 or > 50 || messageIds.Any(id => id <= 0))
+        {
+            throw new HubException("請提供 1 到 50 個有效的訊息 Id。");
+        }
+
+        // 只查這一批的 Id，再用差集找出畫面需要移除的訊息。
+        List<long> existingIds = await dbContext.ChatMessages
+            .Where(message => messageIds.Contains(message.Id))
+            .Select(message => message.Id)
+            .ToListAsync(Context.ConnectionAborted);
+        return messageIds.Except(existingIds).ToArray();
+    }
+
     private async Task SaveAndBroadcastAsync(string content, long? replyToMessageId)
     {
         string text = content?.Trim() ?? "";

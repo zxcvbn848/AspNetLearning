@@ -23,3 +23,24 @@ export function filterDeletedChatMessages<T extends { id: number; replyTo: { id:
       ? { ...message, replyTo: null }
       : message)
 }
+
+/** 把畫面上的訊息與引用原文去重後分批查詢。 */
+export async function syncChatDeletions(
+  messages: ReadonlyArray<{ id: number; replyTo: { id: number } | null }>,
+  fetchMissing: (ids: number[]) => Promise<number[]>,
+  removeMessages: (ids: number[]) => void,
+  isCurrent: () => boolean,
+): Promise<void> {
+  const ids = new Set<number>()
+  for (const { id, replyTo } of messages) {
+    ids.add(id)
+    if (replyTo) ids.add(replyTo.id)
+  }
+
+  const snapshot = [...ids]
+  for (let offset = 0; offset < snapshot.length && isCurrent(); offset += 50) {
+    const missing = await fetchMissing(snapshot.slice(offset, offset + 50))
+    if (!isCurrent()) return
+    removeMessages(missing)
+  }
+}
