@@ -13,3 +13,13 @@ export async function loadChatGap<T extends { id: number }>(
     afterId = page[page.length - 1]!.id
   }
 }
+/** 移除已刪除的訊息及其引用，也適用於較晚抵達的查詢結果。 */
+export function filterDeletedChatMessages<T extends { id: number; replyTo: { id: number } | null }>(
+  messages: T[],
+  deletedIds: ReadonlySet<number>,
+): T[] {
+  return messages.filter(message => !deletedIds.has(message.id))
+    .map(message => message.replyTo && deletedIds.has(message.replyTo.id)
+      ? { ...message, replyTo: null }
+      : message)
+}
