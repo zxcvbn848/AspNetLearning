@@ -256,7 +256,10 @@ onBeforeUnmount(() => {
     <ol ref="messageList" class="chat-messages" role="log" aria-live="polite" aria-label="聊天室訊息" @scroll="onMessageScroll">
       <li v-for="message in messages" :key="message.id" class="chat-message">
         <div class="chat-meta">
-          <strong>{{ message.nickname || `會員 #${message.userId}` }}</strong>
+          <strong>
+            {{ message.nickname || `會員 #${message.userId}` }}
+            <span v-if="message.userId === currentUserId" class="chat-self-badge">你</span>
+          </strong>
           <time :datetime="message.createdAtUtc">{{ new Date(message.createdAtUtc).toLocaleString('zh-TW') }}</time>
         </div>
         <blockquote v-if="message.replyTo" class="chat-quote">
@@ -313,6 +316,7 @@ onBeforeUnmount(() => {
 .chat-quote p { margin: 4px 0 0; white-space: pre-wrap; }
 .chat-message .chat-reply-button, .chat-form .chat-reply-button { margin-top: 6px; padding: 4px 10px; color: var(--text); background: var(--secondary); }
 .chat-meta { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: .85rem; }
+.chat-self-badge { display: inline-block; margin-inline-start: .35em; padding: 0 .45em; border-radius: .5em; color: var(--primary); background: var(--highlight); }
 .chat-form { display: grid; gap: 10px; margin-top: 20px; }
 .chat-form label { font-weight: 700; }
 .chat-form .input-row { display: flex; gap: 10px; }
