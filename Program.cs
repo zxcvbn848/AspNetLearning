@@ -30,6 +30,8 @@ var builder = WebApplication.CreateBuilder(args);
 // AddControllers 讓應用程式能辨識繼承 ControllerBase 並標有路由 Attribute 的類別。
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
+// 同一個後端程序中的所有 Hub 連線共用會員額度。
+builder.Services.AddSingleton<ChatSendLimiter>();
 
 // 只在開發環境註冊可瀏覽的 API 文件，避免正式環境暴露內部路由與資料格式。
 if (builder.Environment.IsDevelopment())

@@ -2,6 +2,7 @@ using AspNetLearning.Data;
 using AspNetLearning.Contracts;
 using AspNetLearning.Extensions;
 using AspNetLearning.Models;
+using AspNetLearning.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,7 @@ namespace AspNetLearning.Hubs;
 
 /// <summary>登入會員共用的公開聊天室。</summary>
 [Authorize]
-public sealed class ChatHub(AppDbContext dbContext) : Hub
+public sealed class ChatHub(AppDbContext dbContext, ChatSendLimiter sendLimiter) : Hub
 {
     private const string Lobby = "lobby";
 
@@ -89,6 +90,11 @@ public sealed class ChatHub(AppDbContext dbContext) : Hub
             (targetId <= 0 || !await dbContext.ChatMessages.AnyAsync(message => message.Id == targetId)))
         {
             throw new HubException("找不到要回覆的訊息。");
+        }
+
+        if (!sendLimiter.TryAcquire(userId))
+        {
+            throw new HubException("CHAT_RATE_LIMIT");
         }
 
         var message = new ChatMessage
