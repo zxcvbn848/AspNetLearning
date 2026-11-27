@@ -3,20 +3,8 @@ import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { HubConnectionBuilder, HubConnectionState, type HubConnection } from '@microsoft/signalr'
 import { getRealtimeAccessToken } from '../services/apiClient'
 import { getCurrentUser } from '../services/authApi'
-import { filterDeletedChatMessages, loadChatGap, syncChatDeletions } from '../services/chatHistory'
+import { filterDeletedChatMessages, loadChatGap, syncChatDeletions, type ChatMessage, type ChatMessagePreview } from '../services/chatHistory'
 import { useChatReadingState } from '../composables/useChatReadingState'
-
-interface ChatMessagePreview {
-  id: number
-  userId: number
-  nickname: string | null
-  content: string
-}
-
-interface ChatMessage extends ChatMessagePreview {
-  createdAtUtc: string
-  replyTo: ChatMessagePreview | null
-}
 
 const messages = ref<ChatMessage[]>([])
 const draft = ref('')
@@ -42,6 +30,9 @@ let olderBeforeId: number | null = null
 
 /** 合併歷史與即時訊息；重連時同一則可能出現兩次，所以以 Id 去重。 */
 async function addMessages(incoming: ChatMessage[], source: 'new' | 'recent' | 'older'): Promise<void> {
+  // 歷史已標記刪除的引用也要記住，避免較晚到的廣播帶回舊原文。
+  const deletedQuotes = incoming.flatMap(({ replyTo }) => replyTo?.content === null ? [replyTo.id] : [])
+  removeMessages(deletedQuotes)
   const list = messageList.value
   const oldHeight = list?.scrollHeight ?? 0
   const oldTop = list?.scrollTop ?? 0
@@ -274,8 +265,11 @@ onBeforeUnmount(() => {
           <time :datetime="message.createdAtUtc">{{ new Date(message.createdAtUtc).toLocaleString('zh-TW') }}</time>
         </div>
         <blockquote v-if="message.replyTo" class="chat-quote">
-          <strong>{{ message.replyTo.nickname || `會員 #${message.replyTo.userId}` }}</strong>
-          <p>{{ message.replyTo.content }}</p>
+          <p v-if="message.replyTo.content === null">原訊息已刪除</p>
+          <template v-else>
+            <strong>{{ message.replyTo.nickname || `會員 #${message.replyTo.userId}` }}</strong>
+            <p>{{ message.replyTo.content }}</p>
+          </template>
         </blockquote>
         <p>{{ message.content }}</p>
         <button type="button" class="secondary-button chat-reply-button"

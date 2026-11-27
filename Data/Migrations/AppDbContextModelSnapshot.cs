@@ -38,6 +38,9 @@ namespace AspNetLearning.Data.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<long?>("ReplyToMessageId")
                         .HasColumnType("bigint");
 

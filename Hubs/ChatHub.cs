@@ -38,7 +38,7 @@ public sealed class ChatHub(AppDbContext dbContext, ChatSendLimiter sendLimiter)
     {
         if (afterId < 0 || throughId <= afterId) throw new HubException("訊息游標範圍不正確。");
 
-        return dbContext.ChatMessages.AsNoTracking()
+        return VisibleMessages()
             .Where(message => message.Id > afterId && message.Id <= throughId)
             .OrderBy(message => message.Id)
             .Take(50)
@@ -49,7 +49,7 @@ public sealed class ChatHub(AppDbContext dbContext, ChatSendLimiter sendLimiter)
     private async Task<List<ChatMessageResponse>> GetMessagesAsync(long? beforeId)
     {
         // null 代表最新一頁；否則只查 Id 更小的訊息，避免新訊息使分頁位移。
-        List<ChatMessageResponse> recent = await dbContext.ChatMessages.AsNoTracking()
+        List<ChatMessageResponse> recent = await VisibleMessages()
             .Where(message => beforeId == null || message.Id < beforeId)
             .OrderByDescending(message => message.Id)
             .Take(50)
@@ -59,13 +59,19 @@ public sealed class ChatHub(AppDbContext dbContext, ChatSendLimiter sendLimiter)
         return recent;
     }
 
+    // 主訊息清單排除刪除紀錄，引用仍能從同一筆紀錄辨識刪除狀態。
+    private IQueryable<ChatMessage> VisibleMessages() => dbContext.ChatMessages.AsNoTracking()
+        .Where(message => !message.IsDeleted);
+
     // 查歷史、重連補收與即時廣播共用這份格式，引用不必另外向前端查詢。
     private static readonly Expression<Func<ChatMessage, ChatMessageResponse>> ToResponse =
         message => new ChatMessageResponse(
             message.Id, message.UserId, message.Author.Nickname, message.Content, message.CreatedAtUtc,
             message.ReplyToMessage == null ? null : new ChatReplyPreview(
-                message.ReplyToMessage.Id, message.ReplyToMessage.UserId,
-                message.ReplyToMessage.Author.Nickname, message.ReplyToMessage.Content));
+                message.ReplyToMessage.Id,
+                message.ReplyToMessage.IsDeleted ? null : message.ReplyToMessage.UserId,
+                message.ReplyToMessage.IsDeleted ? null : message.ReplyToMessage.Author.Nickname,
+                message.ReplyToMessage.IsDeleted ? null : message.ReplyToMessage.Content));
 
     /// <summary>傳送一般聊天訊息。</summary>
     public Task SendMessage(string content) => SaveAndBroadcastAsync(content, null);
@@ -81,10 +87,14 @@ public sealed class ChatHub(AppDbContext dbContext, ChatSendLimiter sendLimiter)
             throw new HubException("請先登入再刪除訊息。");
         }
 
-        // 擁有權條件放在 DELETE 本身，查驗與刪除只執行一次 SQL。
+        // 同一條 UPDATE 檢查擁有權、隱藏訊息並清空原文，保留引用所需的 Id。
         int deleted = await dbContext.ChatMessages
-            .Where(message => message.Id == messageId && message.UserId == userId)
-            .ExecuteDeleteAsync(Context.ConnectionAborted);
+            .Where(message => message.Id == messageId && message.UserId == userId && !message.IsDeleted)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(message => message.IsDeleted, true)
+                .SetProperty(message => message.Content, "")
+                .SetProperty(message => message.ReplyToMessageId, (long?)null),
+                Context.ConnectionAborted);
         if (deleted == 0)
         {
             throw new HubException("找不到可刪除的訊息。");
@@ -102,7 +112,7 @@ public sealed class ChatHub(AppDbContext dbContext, ChatSendLimiter sendLimiter)
         }
 
         // 只查這一批的 Id，再用差集找出畫面需要移除的訊息。
-        List<long> existingIds = await dbContext.ChatMessages
+        List<long> existingIds = await VisibleMessages()
             .Where(message => messageIds.Contains(message.Id))
             .Select(message => message.Id)
             .ToListAsync(Context.ConnectionAborted);
@@ -123,7 +133,7 @@ public sealed class ChatHub(AppDbContext dbContext, ChatSendLimiter sendLimiter)
         }
 
         if (replyToMessageId is long targetId &&
-            (targetId <= 0 || !await dbContext.ChatMessages.AnyAsync(message => message.Id == targetId)))
+            (targetId <= 0 || !await VisibleMessages().AnyAsync(message => message.Id == targetId)))
         {
             throw new HubException("找不到要回覆的訊息。");
         }
@@ -142,8 +152,11 @@ public sealed class ChatHub(AppDbContext dbContext, ChatSendLimiter sendLimiter)
         };
         dbContext.ChatMessages.Add(message);
         await dbContext.SaveChangesAsync();
-        ChatMessageResponse response = await dbContext.ChatMessages.AsNoTracking()
-            .Where(saved => saved.Id == message.Id).Select(ToResponse).SingleAsync();
-        await Clients.Group(Lobby).SendAsync("MessageReceived", response);
+        ChatMessageResponse? response = await VisibleMessages()
+            .Where(saved => saved.Id == message.Id).Select(ToResponse).SingleOrDefaultAsync();
+        if (response is not null)
+        {
+            await Clients.Group(Lobby).SendAsync("MessageReceived", response);
+        }
     }
 }

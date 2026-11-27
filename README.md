@@ -309,7 +309,7 @@ PR 指向 `dev` 或 `main` 時會自動執行建置與測試；檢查內容與�
 
 聊天室刪除：[第二十九課：刪除自己的訊息](docs/29-delete-own-chat-message.md)。
 
-聊天室重連同步刪除：[第三十課：重連後清除已刪除的訊息與引用](docs/30-chat-reconnect-deletions.md)。
+聊天室重連同步刪除：[第三十課：重連後同步刪除與引用提示](docs/30-chat-reconnect-deletions.md)。
 
 快速複習：[ASP.NET Core 名詞與概念速查](docs/aspnet-core-glossary.md)，包含 PHP／Laravel、Go 的相近概念對照。
 

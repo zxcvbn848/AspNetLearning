@@ -200,10 +200,12 @@ try {
   await first.invoke('DeleteMessage', original.id)
   await Promise.all([waitFor(firstDeleted, 1), waitFor(secondDeleted, 1)])
   await assert.rejects(first.invoke('DeleteMessage', original.id), /找不到可刪除的訊息/)
+  await assert.rejects(second.invoke('SendReply', '已刪除的原訊息', original.id), /找不到要回覆的訊息/)
 
+  const deletedQuote = { id: original.id, userId: null, nickname: null, content: null }
   const afterDeletion = await second.invoke('GetNewerMessages', original.id - 1, firstReceived[1].id)
   assert.deepEqual(afterDeletion.map(message => message.id), [firstReceived[1].id])
-  assert.equal(afterDeletion[0].replyTo, null)
+  assert.deepEqual(afterDeletion[0], { ...firstReceived[1], replyTo: deletedQuote })
   assert.deepEqual(firstDeleted, [original.id])
   assert.deepEqual(secondDeleted, [original.id])
   await first.invoke('DeleteMessage', visible.id)
@@ -227,8 +229,11 @@ try {
     assert.ok(batchSizes.length > 1 && batchSizes.every(size => size <= 50))
     assert.equal(queriedIds.length, new Set(queriedIds).size)
     assert.deepEqual(missingIds, new Set([original.id, visible.id]))
-    assert.equal(snapshot.find(message => message.id === reply.id)?.replyTo, null)
+    assert.deepEqual(snapshot.find(message => message.id === reply.id), { ...reply, replyTo: deletedQuote })
     assert.ok(!snapshot.some(message => message.id === visible.id))
+    const olderAfterDeletion = await offline.invoke('GetOlderMessages', reply.id + 1)
+    assert.deepEqual(olderAfterDeletion.find(message => message.id === reply.id), { ...reply, replyTo: deletedQuote })
+    assert.ok(!olderAfterDeletion.some(message => message.id === original.id))
   } finally {
     await offline.stop()
   }

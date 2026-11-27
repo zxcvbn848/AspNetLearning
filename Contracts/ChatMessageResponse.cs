@@ -4,5 +4,5 @@ namespace AspNetLearning.Contracts;
 public sealed record ChatMessageResponse(
     long Id, int UserId, string? Nickname, string Content, DateTime CreatedAtUtc, ChatReplyPreview? ReplyTo);
 
-/// <summary>只回傳原訊息的作者與文字，避免遞迴展開引用。</summary>
-public sealed record ChatReplyPreview(long Id, int UserId, string? Nickname, string Content);
+/// <summary>引用保留原訊息 Id，原訊息已刪除時作者和文字均為 null。</summary>
+public sealed record ChatReplyPreview(long Id, int? UserId, string? Nickname, string? Content);
