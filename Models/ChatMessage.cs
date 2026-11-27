@@ -19,6 +19,9 @@ public sealed class ChatMessage
     /// <summary>訊息文字，最多 500 個字元。</summary>
     public required string Content { get; init; }
 
+    /// <summary>刪除後保留 Id 供引用辨識，原文會同時清空。</summary>
+    public bool IsDeleted { get; init; }
+
     /// <summary>伺服器記錄的 UTC 發送時間。</summary>
     public DateTime CreatedAtUtc { get; init; }
 }

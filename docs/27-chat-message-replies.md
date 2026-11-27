@@ -10,7 +10,7 @@ flowchart LR
     D --> E["即時廣播、歷史、重連都回傳原作者與原文"]
 ```
 
-[資料庫模型](../Models/ChatMessage.cs)只存原訊息的 Id。一般訊息的 `ReplyToMessageId` 為 `null`，而回覆的外鍵指向同一張 `chat_messages` 表。這是自我關聯。如果原訊息日後被刪除，資料庫會清空引用，保留回覆本身。
+[資料庫模型](../Models/ChatMessage.cs)只存原訊息的 Id。一般訊息的 `ReplyToMessageId` 為 `null`，而回覆的外鍵指向同一張 `chat_messages` 表。這是自我關聯。原訊息刪除後，回覆的引用框會顯示「原訊息已刪除」。
 
 [ChatHub](../Hubs/ChatHub.cs) 先確認原訊息存在，再儲存回覆。查詢先篩選、排序和取分頁，再用共用的 `Select(ToResponse)` 組出包含引用的回應。即使畫面還沒載入原訊息，也能顯示一層引用。Laravel Eloquent 可用 `belongsTo(self::class, 'reply_to_message_id')` 表達相近的關聯。
 

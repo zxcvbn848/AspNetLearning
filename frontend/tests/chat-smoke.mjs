@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { HubConnectionBuilder } from '@microsoft/signalr'
-import { loadChatGap } from '../src/services/chatHistory.ts'
+import { filterDeletedChatMessages, loadChatGap, syncChatDeletions } from '../src/services/chatHistory.ts'
 
 const baseUrl = process.env.API_BASE_URL ?? 'http://app:8080'
 const unique = `${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -177,18 +177,67 @@ try {
   const secondDeleted = []
   first.on('MessageDeleted', id => firstDeleted.push(id))
   second.on('MessageDeleted', id => secondDeleted.push(id))
+  const offline = connect(secondToken, [])
+  const offlineDeleted = []
+  offline.on('MessageDeleted', id => offlineDeleted.push(id))
+  await offline.start()
+  let snapshot
+  try {
+    const recent = await offline.invoke('GetRecentMessages')
+    const earlier = await offline.invoke('GetOlderMessages', recent[0].id)
+    // 模擬原文不在畫面，但已經載入引用它的回覆。
+    snapshot = [...earlier, ...recent].filter(message => message.id !== original.id)
+  } finally {
+    await offline.stop()
+  }
+  const reply = snapshot.find(message => message.content === `分頁測試 ${unique} 0`)
+  const visible = snapshot.find(message => message.content === `分頁期間的新訊息 ${unique}`)
+  assert.deepEqual(reply?.replyTo, quote)
+  assert.ok(visible)
+
   await second.start()
   await assert.rejects(second.invoke('DeleteMessage', original.id), /找不到可刪除的訊息/)
   await first.invoke('DeleteMessage', original.id)
   await Promise.all([waitFor(firstDeleted, 1), waitFor(secondDeleted, 1)])
   await assert.rejects(first.invoke('DeleteMessage', original.id), /找不到可刪除的訊息/)
+  await assert.rejects(second.invoke('SendReply', '已刪除的原訊息', original.id), /找不到要回覆的訊息/)
 
+  const deletedQuote = { id: original.id, userId: null, nickname: null, content: null }
   const afterDeletion = await second.invoke('GetNewerMessages', original.id - 1, firstReceived[1].id)
   assert.deepEqual(afterDeletion.map(message => message.id), [firstReceived[1].id])
-  assert.equal(afterDeletion[0].replyTo, null)
+  assert.deepEqual(afterDeletion[0], { ...firstReceived[1], replyTo: deletedQuote })
   assert.deepEqual(firstDeleted, [original.id])
   assert.deepEqual(secondDeleted, [original.id])
-  console.log('PASS: 認證、回覆、分頁、重連補收、發送限流與刪除權限')
+  await first.invoke('DeleteMessage', visible.id)
+  assert.deepEqual(offlineDeleted, [])
+  await offline.start()
+  try {
+    for (const invalid of [[], [0], Array(51).fill(original.id)]) {
+      await assert.rejects(offline.invoke('GetMissingMessageIds', invalid), /請提供 1 到 50 個有效的訊息 Id/)
+    }
+    const batchSizes = []
+    const queriedIds = []
+    const missingIds = new Set()
+    await syncChatDeletions(snapshot, async ids => {
+      batchSizes.push(ids.length)
+      queriedIds.push(...ids)
+      return offline.invoke('GetMissingMessageIds', ids)
+    }, ids => {
+      for (const id of ids) missingIds.add(id)
+      snapshot = filterDeletedChatMessages(snapshot, missingIds)
+    }, () => true)
+    assert.ok(batchSizes.length > 1 && batchSizes.every(size => size <= 50))
+    assert.equal(queriedIds.length, new Set(queriedIds).size)
+    assert.deepEqual(missingIds, new Set([original.id, visible.id]))
+    assert.deepEqual(snapshot.find(message => message.id === reply.id), { ...reply, replyTo: deletedQuote })
+    assert.ok(!snapshot.some(message => message.id === visible.id))
+    const olderAfterDeletion = await offline.invoke('GetOlderMessages', reply.id + 1)
+    assert.deepEqual(olderAfterDeletion.find(message => message.id === reply.id), { ...reply, replyTo: deletedQuote })
+    assert.ok(!olderAfterDeletion.some(message => message.id === original.id))
+  } finally {
+    await offline.stop()
+  }
+  console.log('PASS: 認證、回覆、分頁、重連補收、發送限流、刪除權限與重連同步刪除')
 } finally {
   await Promise.all([first.stop(), second.stop()])
 }

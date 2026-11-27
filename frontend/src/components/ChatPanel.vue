@@ -3,20 +3,8 @@ import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { HubConnectionBuilder, HubConnectionState, type HubConnection } from '@microsoft/signalr'
 import { getRealtimeAccessToken } from '../services/apiClient'
 import { getCurrentUser } from '../services/authApi'
-import { filterDeletedChatMessages, loadChatGap } from '../services/chatHistory'
+import { filterDeletedChatMessages, loadChatGap, syncChatDeletions, type ChatMessage, type ChatMessagePreview } from '../services/chatHistory'
 import { useChatReadingState } from '../composables/useChatReadingState'
-
-interface ChatMessagePreview {
-  id: number
-  userId: number
-  nickname: string | null
-  content: string
-}
-
-interface ChatMessage extends ChatMessagePreview {
-  createdAtUtc: string
-  replyTo: ChatMessagePreview | null
-}
 
 const messages = ref<ChatMessage[]>([])
 const draft = ref('')
@@ -38,9 +26,13 @@ let disposed = false
 let historyLoaded = false
 let catchUpAfter: number | null = null
 let historyVersion = 0
+let olderBeforeId: number | null = null
 
 /** 合併歷史與即時訊息；重連時同一則可能出現兩次，所以以 Id 去重。 */
 async function addMessages(incoming: ChatMessage[], source: 'new' | 'recent' | 'older'): Promise<void> {
+  // 歷史已標記刪除的引用也要記住，避免較晚到的廣播帶回舊原文。
+  const deletedQuotes = incoming.flatMap(({ replyTo }) => replyTo?.content === null ? [replyTo.id] : [])
+  removeMessages(deletedQuotes)
   const list = messageList.value
   const oldHeight = list?.scrollHeight ?? 0
   const oldTop = list?.scrollTop ?? 0
@@ -62,13 +54,16 @@ async function addMessages(incoming: ChatMessage[], source: 'new' | 'recent' | '
   updatePosition(list)
 }
 
-function removeMessage(id: number): void {
-  if (deletedIds.has(id)) return
-  deletedIds.add(id)
+function removeMessages(ids: number[]): void {
+  const missing = ids.filter(id => !deletedIds.has(id))
+  if (missing.length === 0) return
+  for (const id of missing) {
+    deletedIds.add(id)
+    forgetMessage(id)
+  }
   messages.value = filterDeletedChatMessages(messages.value, deletedIds)
-  forgetMessage(id)
-  if (replyTarget.value?.id === id) replyTarget.value = null
-  if (deleteTargetId.value === id) deleteTargetId.value = null
+  if (replyTarget.value && deletedIds.has(replyTarget.value.id)) replyTarget.value = null
+  if (deleteTargetId.value !== null && deletedIds.has(deleteTargetId.value)) deleteTargetId.value = null
   void nextTick(onMessageScroll)
 }
 
@@ -89,7 +84,7 @@ async function deleteMessage(id: number): Promise<void> {
   errorMessage.value = ''
   try {
     await connection.invoke('DeleteMessage', id)
-    removeMessage(id)
+    removeMessages([id])
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '訊息刪除失敗。'
   } finally {
@@ -114,7 +109,7 @@ function rememberCatchUpStart(): void {
   if (historyLoaded) catchUpAfter ??= messages.value.at(-1)?.id ?? 0
 }
 
-/** 初次讀取最新 50 則，重連時從斷線前的游標分批補收。 */
+/** 初次讀取最新 50 則，重連時分批補收並核對刪除。 */
 async function loadHistory(hub: HubConnection): Promise<void> {
   const version = ++historyVersion
   const isCurrent = () => !disposed && connection === hub && historyVersion === version
@@ -124,6 +119,7 @@ async function loadHistory(hub: HubConnection): Promise<void> {
     if (!isCurrent()) return
     if (afterId === null) {
       hasMore.value = recent.length === 50
+      olderBeforeId = recent[0]?.id ?? null
       historyLoaded = true
       await addMessages(recent, 'recent')
       return
@@ -132,6 +128,9 @@ async function loadHistory(hub: HubConnection): Promise<void> {
     await loadChatGap(afterId, recent.at(-1)?.id ?? afterId,
       (cursor, throughId) => hub.invoke<ChatMessage[]>('GetNewerMessages', cursor, throughId),
       page => addMessages(page, 'new'), isCurrent)
+    if (!isCurrent()) return
+    await syncChatDeletions(messages.value,
+      ids => hub.invoke<number[]>('GetMissingMessageIds', ids), removeMessages, isCurrent)
     if (isCurrent()) catchUpAfter = null
   } catch {
     if (!isCurrent()) return
@@ -140,17 +139,19 @@ async function loadHistory(hub: HubConnection): Promise<void> {
   }
 }
 
-/** 把目前最舊訊息的 Id 當游標，向伺服器要求更早的一頁。 */
+/** 用上次查到的最舊 Id，向伺服器要求更早的一頁。 */
 async function loadOlder(): Promise<void> {
   const hub = connection
-  const oldest = messages.value[0]
-  if (!hub || !oldest || loadingOlder.value || status.value !== 'connected') return
+  // 保留已查到的最舊 Id，就算這一頁全被刪除，仍能往前翻。
+  const beforeId = olderBeforeId
+  if (!hub || beforeId === null || loadingOlder.value || status.value !== 'connected') return
   loadingOlder.value = true
   errorMessage.value = ''
   try {
-    const older = await hub.invoke<ChatMessage[]>('GetOlderMessages', oldest.id)
+    const older = await hub.invoke<ChatMessage[]>('GetOlderMessages', beforeId)
     if (disposed || connection !== hub) return
     hasMore.value = older.length === 50
+    olderBeforeId = older[0]?.id ?? beforeId
     await addMessages(older, 'older')
   } catch {
     errorMessage.value = '較早的訊息載入失敗，請再試一次。'
@@ -172,7 +173,7 @@ async function connect(): Promise<void> {
     .build()
   connection = hub
   hub.on('MessageReceived', (message: ChatMessage) => { void addMessages([message], 'new') })
-  hub.on('MessageDeleted', removeMessage)
+  hub.on('MessageDeleted', (id: number) => { removeMessages([id]) })
   hub.onreconnecting(() => {
     rememberCatchUpStart()
     status.value = 'reconnecting'
@@ -264,8 +265,11 @@ onBeforeUnmount(() => {
           <time :datetime="message.createdAtUtc">{{ new Date(message.createdAtUtc).toLocaleString('zh-TW') }}</time>
         </div>
         <blockquote v-if="message.replyTo" class="chat-quote">
-          <strong>{{ message.replyTo.nickname || `會員 #${message.replyTo.userId}` }}</strong>
-          <p>{{ message.replyTo.content }}</p>
+          <p v-if="message.replyTo.content === null">原訊息已刪除</p>
+          <template v-else>
+            <strong>{{ message.replyTo.nickname || `會員 #${message.replyTo.userId}` }}</strong>
+            <p>{{ message.replyTo.content }}</p>
+          </template>
         </blockquote>
         <p>{{ message.content }}</p>
         <button type="button" class="secondary-button chat-reply-button"
